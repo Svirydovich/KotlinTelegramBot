@@ -15,9 +15,9 @@ fun main() {
         println("0 - Выйти")
         println("\nВведите 1, 2 или 0")
 
-        val input = readln()
+        val menuChoice = readln()
 
-        when (input) {
+        when (menuChoice) {
             "1" -> println("Вы выбрали: Учить слова")
             "2" -> println("Вы выбрали: Статистика")
             "0" -> {
