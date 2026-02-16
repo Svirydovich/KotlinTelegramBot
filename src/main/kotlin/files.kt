@@ -4,6 +4,7 @@ import java.io.File
 import java.io.IOException
 
 const val TOTAL_PERCENTS = 100
+const val NORM_OF_CORRECT_ANSWERS = 3
 
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
@@ -24,9 +25,11 @@ fun main() {
             "2" -> {
                 println("Вы выбрали: Статистика")
                 val totalCount = dictionary.size
-                val learnedCount = dictionary.count { it.correctAnswersCount >= 3 }
-                val percent = learnedCount * TOTAL_PERCENTS / totalCount
-                println("Выучено $learnedCount из $totalCount слов | $percent%\n")
+                val learnedCount = dictionary.count { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
+                if (totalCount > 0) {
+                    val percent = learnedCount * TOTAL_PERCENTS / totalCount
+                    println("Выучено $learnedCount из $totalCount слов | $percent%\n")
+                }
                 continue
             }
 
