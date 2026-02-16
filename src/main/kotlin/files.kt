@@ -6,6 +6,31 @@ import java.io.IOException
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
 fun main() {
+    val dictionary = loadDictionary()
+
+    while (true) {
+        println("Меню:")
+        println("1 - Учить слова")
+        println("2 - Статистика")
+        println("0 - Выйти")
+        println("\nВведите 1, 2 или 0")
+
+        val menuChoice = readln()
+
+        when (menuChoice) {
+            "1" -> println("Вы выбрали: Учить слова")
+            "2" -> println("Вы выбрали: Статистика")
+            "0" -> {
+                println("Выход из программы...")
+                break
+            }
+
+            else -> println("Вы ввели неверную команду! Введите число 1, 2 или 0")
+        }
+    }
+}
+
+fun loadDictionary(): MutableList<Word> {
     val wordsFile = File("words.txt")
     wordsFile.createNewFile()
 
@@ -20,7 +45,5 @@ fun main() {
         println("An error occurred while reading the file: ${e.message}")
     }
 
-    for (word in dictionary) {
-        println("Word: ${word.text}, Translate: ${word.translate}, Correct Answers Count: ${word.correctAnswersCount}")
-    }
+    return dictionary
 }
