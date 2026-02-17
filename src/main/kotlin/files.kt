@@ -29,7 +29,7 @@ fun main() {
 
                 if (notLearnedList.isEmpty()) {
                     println("Все слова в словаре выучены!")
-                    return
+                    continue
                 }
 
                 val questionWords = notLearnedList.shuffled().take(QUESTION_SIZE)
