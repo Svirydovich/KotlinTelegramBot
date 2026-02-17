@@ -5,6 +5,7 @@ import java.io.IOException
 
 const val TOTAL_PERCENTS = 100
 const val NORM_OF_CORRECT_ANSWERS = 3
+const val QUESTION_SIZE = 4
 
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
@@ -21,7 +22,36 @@ fun main() {
         val menuChoice = readln()
 
         when (menuChoice) {
-            "1" -> println("Вы выбрали: Учить слова")
+            "1" -> {
+                println("Вы выбрали: Учить слова")
+
+                val notLearnedList = dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
+
+                if (notLearnedList.isEmpty()) {
+                    println("Все слова в словаре выучены!")
+                    continue
+                }
+
+                val questionWords = notLearnedList.shuffled().take(QUESTION_SIZE)
+
+                for (correctAnswer in questionWords) {
+                    val shuffledOptions = questionWords.shuffled()
+
+                    println("\n${correctAnswer.text}:")
+                    for (index in shuffledOptions.indices) {
+                        println("${index + 1}. ${shuffledOptions[index].translate}")
+                    }
+
+                    println("\nВведите номер правильного ответа:")
+                    val userAnswer = readln().toIntOrNull()
+
+                    if (userAnswer != null && userAnswer in 1..shuffledOptions.size) {
+                        if (shuffledOptions[userAnswer - 1] == correctAnswer) println("Правильный ответ!")
+                        else println("Неправильный ответ")
+                    } else println("Неверный ввод. Введите номер от 1 до ${shuffledOptions.size}")
+                }
+            }
+
             "2" -> {
                 println("Вы выбрали: Статистика")
                 val totalCount = dictionary.size
