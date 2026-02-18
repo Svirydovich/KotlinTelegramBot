@@ -35,20 +35,28 @@ fun main() {
                 val questionWords = notLearnedList.shuffled().take(QUESTION_SIZE)
 
                 for (correctAnswer in questionWords) {
+                    val correctAnswerId = questionWords.indexOf(correctAnswer)
+
                     val shuffledOptions = questionWords.shuffled()
 
                     println("\n${correctAnswer.text}:")
                     for (index in shuffledOptions.indices) {
-                        println("${index + 1}. ${shuffledOptions[index].translate}")
+                        println("${index + 1} - ${shuffledOptions[index].translate}")
+                        println("----------\n0 - Меню")
                     }
 
-                    println("\nВведите номер правильного ответа:")
-                    val userAnswer = readln().toIntOrNull()
+                    println("\nВведите номер:")
+                    val userAnswerInput = readln().toIntOrNull()
 
-                    if (userAnswer != null && userAnswer in 1..shuffledOptions.size) {
-                        if (shuffledOptions[userAnswer - 1] == correctAnswer) println("Правильный ответ!")
-                        else println("Неправильный ответ")
-                    } else println("Неверный ввод. Введите номер от 1 до ${shuffledOptions.size}")
+                    if (userAnswerInput != null && userAnswerInput in 0..shuffledOptions.size) {
+                        if (userAnswerInput == 0) continue
+
+                        if (userAnswerInput - 1 == correctAnswerId) {
+                            correctAnswer.correctAnswersCount++
+                            saveDictionary(dictionary)
+                            println("Правильно!")
+                        } else println("Неправильно! ${correctAnswer.text} - это ${correctAnswer.translate}")
+                    } else println("Некорректный ввод. Введите номер от 0 до ${shuffledOptions.size}")
                 }
             }
 
@@ -89,4 +97,19 @@ fun loadDictionary(): MutableList<Word> {
     }
 
     return dictionary
+}
+
+fun saveDictionary(dictionary: MutableList<Word>) {
+    val wordsFile = File("words.txt")
+
+    try {
+        val content = dictionary.joinToString("\n") {
+            "${it.text}|${it.translate}|${it.correctAnswersCount}"
+        }
+
+        wordsFile.writeText(content)
+
+    } catch (e: Exception) {
+        println("An error occurred while writing to the file: ${e.message}")
+    }
 }
