@@ -32,24 +32,29 @@ fun main() {
                     continue
                 }
 
-                val questionWords = notLearnedList.shuffled().take(QUESTION_SIZE)
+                while (true) {
+                    val questionWords = if (notLearnedList.size >= QUESTION_SIZE) {
+                        notLearnedList.shuffled().take(QUESTION_SIZE)
+                    } else {
+                        val additionalWords = dictionary.shuffled().take(QUESTION_SIZE - notLearnedList.size)
+                        notLearnedList + additionalWords
+                    }
 
-                for (correctAnswer in questionWords) {
-                    val correctAnswerId = questionWords.indexOf(correctAnswer)
-
+                    val correctAnswer = questionWords.shuffled().first()
                     val shuffledOptions = questionWords.shuffled()
+                    val correctAnswerId = shuffledOptions.indexOf(correctAnswer)
 
                     println("\n${correctAnswer.text}:")
                     for (index in shuffledOptions.indices) {
                         println("${index + 1} - ${shuffledOptions[index].translate}")
-                        println("----------\n0 - Меню")
                     }
 
+                    println("----------\n0 - Меню")
                     println("\nВведите номер:")
                     val userAnswerInput = readln().toIntOrNull()
 
                     if (userAnswerInput != null && userAnswerInput in 0..shuffledOptions.size) {
-                        if (userAnswerInput == 0) continue
+                        if (userAnswerInput == 0) break
 
                         if (userAnswerInput - 1 == correctAnswerId) {
                             correctAnswer.correctAnswersCount++
