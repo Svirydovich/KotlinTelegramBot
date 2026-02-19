@@ -45,10 +45,7 @@ fun main() {
                     val correctAnswerId = shuffledOptions.indexOf(correctAnswer)
 
                     println("\n${correctAnswer.text}:")
-                    for (index in shuffledOptions.indices) {
-                        println("${index + 1} - ${shuffledOptions[index].translate}")
-                    }
-
+                    shuffledOptions.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
                     println("----------\n0 - Меню")
                     println("\nВведите номер:")
                     val userAnswerInput = readln().toIntOrNull()
