@@ -7,10 +7,8 @@ const val QUESTION_SIZE = 4
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
 fun Question.printQuestion() {
-    val shuffledOptions = variants
-
     println("\n${correctAnswer.text}:")
-    shuffledOptions.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
+    variants.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
     println("----------\n0 - Меню")
     println("\nВведите номер:")
 }
@@ -43,8 +41,8 @@ fun main() {
                             if (userAnswerInput == 0) break
 
                             if (trainer.checkAnswer(userAnswerInput.minus(1))) {
-                                println("Правильно!\n")
-                            } else println("Неправильно! ${question.correctAnswer.text} - это ${question.correctAnswer.translate}\n")
+                                println("Правильно!")
+                            } else println("Неправильно! ${question.correctAnswer.text} - это ${question.correctAnswer.translate}")
                         } else println("Некорректный ввод. Введите номер от 0 до $QUESTION_SIZE")
                     }
                 }
