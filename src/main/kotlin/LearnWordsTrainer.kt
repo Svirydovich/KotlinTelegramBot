@@ -18,7 +18,6 @@ class LearnWordsTrainer {
             val percent = learnedCount * TOTAL_PERCENTS / totalCount
             return Statistics(totalCount, learnedCount, percent)
         } else {
-            println("В словаре нет слов")
             return Statistics(0, 0, 0)
         }
     }

@@ -7,10 +7,9 @@ const val QUESTION_SIZE = 4
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
 fun Question.printQuestion() {
-    val question = this
-    val shuffledOptions = question.variants
+    val shuffledOptions = variants
 
-    println("\n${question.correctAnswer.text}:")
+    println("\n${correctAnswer.text}:")
     shuffledOptions.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
     println("----------\n0 - Меню")
     println("\nВведите номер:")
@@ -53,8 +52,9 @@ fun main() {
 
             "2" -> {
                 val statistics = trainer.getStatistics()
-                println("Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%\n")
-                trainer.getStatistics()
+                if (statistics.totalCount > 0)
+                    println("Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%\n")
+                else println("В словаре нет слов")
                 continue
             }
 
