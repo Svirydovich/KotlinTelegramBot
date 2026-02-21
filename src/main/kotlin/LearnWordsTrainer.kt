@@ -1,7 +1,6 @@
 package org.example
 
 import java.io.File
-import java.io.IOException
 
 data class Question(val variants: List<Word>, val correctAnswer: Word)
 
@@ -25,14 +24,13 @@ class LearnWordsTrainer {
     fun getNextQuestion(): Question? {
         val notLearnedList = dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
         if (notLearnedList.isEmpty()) return null
-        val questionWords = if (notLearnedList.size >= QUESTION_SIZE) {
-            notLearnedList.shuffled().take(QUESTION_SIZE)
-        } else {
-            val additionalWords = dictionary.shuffled().take(QUESTION_SIZE - notLearnedList.size)
-            notLearnedList + additionalWords
-        }
 
-        val correctAnswer = questionWords.shuffled().first()
+        val questionWords = if (notLearnedList.size < QUESTION_SIZE) {
+            val learnedList = dictionary.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
+            notLearnedList + learnedList.shuffled().take(QUESTION_SIZE - notLearnedList.size)
+        } else notLearnedList.shuffled().take(QUESTION_SIZE)
+
+        val correctAnswer = notLearnedList.shuffled().first()
         question = Question(questionWords, correctAnswer)
         return question
     }
@@ -54,13 +52,9 @@ class LearnWordsTrainer {
 
         val dictionary = mutableListOf<Word>()
 
-        try {
-            for (word in wordsFile.readLines()) {
-                val parts = word.split("|")
-                dictionary.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0))
-            }
-        } catch (e: IOException) {
-            println("An error occurred while reading the file: ${e.message}")
+        for (word in wordsFile.readLines()) {
+            val parts = word.split("|")
+            dictionary.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0))
         }
 
         return dictionary
