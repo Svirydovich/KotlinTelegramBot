@@ -30,7 +30,7 @@ class LearnWordsTrainer {
             notLearnedList + learnedList.shuffled().take(QUESTION_SIZE - notLearnedList.size)
         } else notLearnedList.shuffled().take(QUESTION_SIZE)
 
-        val correctAnswer = notLearnedList.shuffled().first()
+        val correctAnswer = questionWords.shuffled().first()
         question = Question(questionWords, correctAnswer)
         return question
     }
