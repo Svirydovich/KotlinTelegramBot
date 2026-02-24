@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val updateIdRegex = "\"update_id\":\\s(\\d+)".toRegex()
     val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
-    val chatIdRegex = "\"chat\":\\{\"id\":(\\d+)".toRegex()
+    val chatIdRegex = "\"chat\":\\{\"id\":\\s(\\d+)".toRegex()
 
     while (true) {
         Thread.sleep(2000)
