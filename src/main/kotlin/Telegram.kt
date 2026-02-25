@@ -1,9 +1,11 @@
 package org.example
 
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
 
 class TelegramBotService(val botToken: String) {
     val client: HttpClient = HttpClient.newBuilder().build()
@@ -17,10 +19,9 @@ class TelegramBotService(val botToken: String) {
 
     fun sendMessage(chatId: Long, text: String): String {
         val urlSendMessage = "https://api.telegram.org/bot$botToken/sendMessage"
-        val params = "chat_id=$chatId&text=$text"
-        val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("$urlSendMessage?$params"))
-            .build()
+        val encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8.toString())
+        val params = "chat_id=$chatId&text=$encodedText"
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create("$urlSendMessage?$params")).build()
         return client.send(request, HttpResponse.BodyHandlers.ofString()).body()
     }
 }
@@ -41,7 +42,7 @@ fun main(args: Array<String>) {
 
         val matchResult = updateIdRegex.find(updates)
 
-        if (matchResult != null) updateId = matchResult.groups[1]?.value?.toInt() ?: updateId
+        if (matchResult != null) updateId = matchResult.groups[1]?.value?.toInt() ?: (updateId + 1)
 
         val messageMatchResult: MatchResult? = messageTextRegex.find(updates)
         val chatIdMatchResult = chatIdRegex.find(updates)
