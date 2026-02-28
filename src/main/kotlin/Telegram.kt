@@ -29,7 +29,11 @@ fun main(args: Array<String>) {
         val chatIdMatchResult = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (messageMatchResult.equals(HELLO, ignoreCase = true) && chatIdMatchResult != null) telegramBotService.sendMessage(
+        if (messageMatchResult.equals(
+                HELLO,
+                ignoreCase = true
+            ) && chatIdMatchResult != null
+        ) telegramBotService.sendMessage(
             chatIdMatchResult,
             HELLO
         )
