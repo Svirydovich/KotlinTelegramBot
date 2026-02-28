@@ -1,5 +1,8 @@
 package org.example
 
+const val MENU = "/start"
+const val HELLO = "Hello"
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     val telegramBotService = TelegramBotService(botToken)
@@ -26,12 +29,12 @@ fun main(args: Array<String>) {
         val chatIdMatchResult = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (messageMatchResult?.lowercase() == "hello" && chatIdMatchResult != null) telegramBotService.sendMessage(
+        if (messageMatchResult.equals(HELLO, ignoreCase = true) && chatIdMatchResult != null) telegramBotService.sendMessage(
             chatIdMatchResult,
-            "Hello"
+            HELLO
         )
 
-        if (messageMatchResult?.lowercase() == "menu" && chatIdMatchResult != null) telegramBotService.sendMenu(
+        if (messageMatchResult?.lowercase() == MENU && chatIdMatchResult != null) telegramBotService.sendMenu(
             chatIdMatchResult
         )
 
