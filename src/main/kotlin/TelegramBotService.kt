@@ -7,6 +7,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 
+const val BASE_URL = "https://api.telegram.org/bot"
+
 class TelegramBotService(val botToken: String) {
     val client: HttpClient = HttpClient.newBuilder().build()
 
