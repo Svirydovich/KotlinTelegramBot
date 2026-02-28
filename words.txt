@@ -1,3 +1,12 @@
-hello|привет|
-dog|собака|
-cat|кошка|
+hello|hello|4
+dog|dog|3
+cat|cat|10
+house|house|7
+white|white|1
+black|black|1
+red|red|0
+tiger|tiger|0
+tea|tea|1
+box|box|0
+hot|hot|1
+pepper|pepper|1

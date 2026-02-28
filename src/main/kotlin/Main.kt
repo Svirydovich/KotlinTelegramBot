@@ -4,8 +4,6 @@ const val TOTAL_PERCENTS = 100
 const val NORM_OF_CORRECT_ANSWERS = 3
 const val QUESTION_SIZE = 4
 
-data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
-
 fun Question.printQuestion() {
     println("\n${correctAnswer.text}:")
     variants.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
