@@ -12,11 +12,7 @@ class LearnWordsTrainer {
     private var question: Question? = null
     private val dictionary = loadDictionary()
 
-    fun checkNextQuestionAndSend(
-        trainer: LearnWordsTrainer,
-        telegramBotService: TelegramBotService,
-        chatId: Long
-    ) {
+    fun checkNextQuestionAndSend(telegramBotService: TelegramBotService, chatId: Long) {
         val question = getNextQuestion()
 
         if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")

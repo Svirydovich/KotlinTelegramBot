@@ -45,7 +45,7 @@ fun main(args: Array<String>) {
         )
 
         if (data?.lowercase() == LEARN_WORDS_CLICKED && chatIdMatchResult != null) {
-            trainer.checkNextQuestionAndSend(trainer, telegramBotService, chatIdMatchResult)
+            trainer.checkNextQuestionAndSend(telegramBotService, chatIdMatchResult)
         }
     }
 }

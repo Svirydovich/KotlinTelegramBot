@@ -63,11 +63,11 @@ class TelegramBotService(val botToken: String) {
         val sendMessageBody = """
         {
             "chat_id": $chatId,
-            "text": "${question.correctAnswer}",
+            "text": "${question.variants}",
             "reply_markup": {
                 "inline_keyboard": [
                     ${
-            question.variants.mapIndexed { option, index ->
+            question.variants.mapIndexed { index, option ->
                 """
                         [
                             {
