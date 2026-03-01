@@ -14,6 +14,7 @@ fun main(args: Array<String>) {
     val dataRegex = "\"data\":\"(.+?)\"".toRegex()
 
     val trainer = LearnWordsTrainer()
+    val statistics = trainer.getStatistics()
 
     while (true) {
         Thread.sleep(2000)
@@ -29,7 +30,11 @@ fun main(args: Array<String>) {
         val chatIdMatchResult = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (messageMatchResult.equals(HELLO, ignoreCase = true) && chatIdMatchResult != null) telegramBotService.sendMessage(
+        if (messageMatchResult.equals(
+                HELLO,
+                ignoreCase = true
+            ) && chatIdMatchResult != null
+        ) telegramBotService.sendMessage(
             chatIdMatchResult,
             HELLO
         )
@@ -38,9 +43,9 @@ fun main(args: Array<String>) {
             chatIdMatchResult
         )
 
-        if (data?.lowercase() == "statistics_clicked" && chatIdMatchResult != null) telegramBotService.sendMessage(
+        if (data?.lowercase() == STATISTICS_CLICKED && chatIdMatchResult != null) telegramBotService.sendMessage(
             chatIdMatchResult,
-            "Выучено ${trainer.getStatistics().learnedCount} из ${trainer.getStatistics().totalCount} слов | ${trainer.getStatistics().percent}%"
+            "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
         )
     }
 }
