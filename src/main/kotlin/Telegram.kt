@@ -2,6 +2,7 @@ package org.example
 
 const val MENU = "/start"
 const val HELLO = "Hello"
+const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 
 fun main(args: Array<String>) {
     val botToken = args[0]
@@ -30,22 +31,21 @@ fun main(args: Array<String>) {
         val chatIdMatchResult = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (messageMatchResult.equals(
-                HELLO,
-                ignoreCase = true
-            ) && chatIdMatchResult != null
-        ) telegramBotService.sendMessage(
-            chatIdMatchResult,
-            HELLO
-        )
+        if (messageMatchResult.equals(HELLO, ignoreCase = true) && chatIdMatchResult != null) {
+            telegramBotService.sendMessage(chatIdMatchResult, HELLO)
+        }
 
-        if (messageMatchResult?.lowercase() == MENU && chatIdMatchResult != null) telegramBotService.sendMenu(
-            chatIdMatchResult
-        )
+        if (messageMatchResult?.lowercase() == MENU && chatIdMatchResult != null) {
+            telegramBotService.sendMenu(chatIdMatchResult)
+        }
 
         if (data?.lowercase() == STATISTICS_CLICKED && chatIdMatchResult != null) telegramBotService.sendMessage(
             chatIdMatchResult,
             "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
         )
+
+        if (data?.lowercase() == LEARN_WORDS_CLICKED && chatIdMatchResult != null) {
+            trainer.checkNextQuestionAndSend(trainer, telegramBotService, chatIdMatchResult)
+        }
     }
 }

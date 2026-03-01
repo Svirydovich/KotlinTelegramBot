@@ -12,6 +12,17 @@ class LearnWordsTrainer {
     private var question: Question? = null
     private val dictionary = loadDictionary()
 
+    fun checkNextQuestionAndSend(
+        trainer: LearnWordsTrainer,
+        telegramBotService: TelegramBotService,
+        chatId: Long
+    ) {
+        val question = getNextQuestion()
+
+        if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
+        else telegramBotService.sendQuestion(chatId, question)
+    }
+
     fun getStatistics(): Statistics {
         val totalCount = dictionary.size
         val learnedCount = dictionary.count { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
