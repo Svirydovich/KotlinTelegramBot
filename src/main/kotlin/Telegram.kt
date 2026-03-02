@@ -47,5 +47,25 @@ fun main(args: Array<String>) {
         if (data?.lowercase() == LEARN_WORDS_CLICKED && chatIdMatchResult != null) {
             trainer.checkNextQuestionAndSend(telegramBotService, chatIdMatchResult)
         }
+
+        if (data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true && chatIdMatchResult != null) {
+            val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toIntOrNull()
+
+            if (userAnswerIndex != null) {
+                val isCorrect = trainer.checkAnswer(userAnswerIndex)
+
+                if (isCorrect) telegramBotService.sendMessage(chatIdMatchResult, "Правильно!")
+                else {
+                    val correctAnswer = trainer.question?.correctAnswer
+                    val correctAnswerText = correctAnswer?.translate ?: "В словаре нет перевода"
+                    telegramBotService.sendMessage(
+                        chatIdMatchResult,
+                        "Неправильно! ${correctAnswer?.text} – это $correctAnswerText"
+                    )
+                }
+
+                trainer.checkNextQuestionAndSend(telegramBotService, chatIdMatchResult)
+            }
+        }
     }
 }

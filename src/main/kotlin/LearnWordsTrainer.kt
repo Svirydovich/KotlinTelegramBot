@@ -9,7 +9,7 @@ data class Question(val variants: List<Word>, val correctAnswer: Word)
 data class Statistics(val totalCount: Int, val learnedCount: Int, val percent: Int)
 
 class LearnWordsTrainer {
-    private var question: Question? = null
+    var question: Question? = null
     private val dictionary = loadDictionary()
 
     fun checkNextQuestionAndSend(telegramBotService: TelegramBotService, chatId: Long) {
