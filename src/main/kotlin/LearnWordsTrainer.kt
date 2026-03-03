@@ -1,7 +1,10 @@
 package org.example
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.io.File
 
+@Serializable
 data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
 
 data class Question(val variants: List<Word>, val correctAnswer: Word)
@@ -12,11 +15,11 @@ class LearnWordsTrainer {
     var question: Question? = null
     private val dictionary = loadDictionary()
 
-    fun checkNextQuestionAndSend(telegramBotService: TelegramBotService, chatId: Long) {
+    fun checkNextQuestionAndSend(json: Json, telegramBotService: TelegramBotService, chatId: Long) {
         val question = getNextQuestion()
 
-        if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
-        else telegramBotService.sendQuestion(chatId, question)
+        if (question == null) telegramBotService.sendMessage(json, chatId, "Все слова в словаре выучены")
+        else telegramBotService.sendQuestion(json, chatId, question)
     }
 
     fun getStatistics(): Statistics {
