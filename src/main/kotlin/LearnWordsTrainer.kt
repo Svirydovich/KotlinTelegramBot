@@ -11,7 +11,7 @@ data class Question(val variants: List<Word>, val correctAnswer: Word)
 
 data class Statistics(val totalCount: Int, val learnedCount: Int, val percent: Int)
 
-class LearnWordsTrainer {
+class LearnWordsTrainer(private val fileName: String = "words.txt") {
     var question: Question? = null
     private val dictionary = loadDictionary()
 
@@ -52,14 +52,15 @@ class LearnWordsTrainer {
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
             if (correctAnswerId == userAnswerId) {
                 it.correctAnswer.correctAnswersCount++
-                saveDictionary(dictionary)
+                saveDictionary()
                 true
             } else false
         } ?: false
     }
 
     private fun loadDictionary(): MutableList<Word> {
-        val wordsFile = File("words.txt")
+        val wordsFile = File(fileName)
+        if (!wordsFile.exists()) File("words.txt").copyTo(wordsFile)
         wordsFile.createNewFile()
 
         val dictionary = mutableListOf<Word>()
@@ -72,8 +73,8 @@ class LearnWordsTrainer {
         return dictionary
     }
 
-    private fun saveDictionary(dictionary: MutableList<Word>) {
-        val wordsFile = File("words.txt")
+    private fun saveDictionary() {
+        val wordsFile = File(fileName)
 
         try {
             val content = dictionary.joinToString("\n") {
@@ -85,5 +86,10 @@ class LearnWordsTrainer {
         } catch (e: Exception) {
             println("An error occurred while writing to the file: ${e.message}")
         }
+    }
+
+    fun resetProgress() {
+        dictionary.forEach { it.correctAnswersCount = 0 }
+        saveDictionary()
     }
 }
