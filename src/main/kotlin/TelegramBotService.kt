@@ -65,9 +65,9 @@ class TelegramBotService(val botToken: String) {
             chatId,
             question.correctAnswer.text,
             ReplyMarkup(
-                listOf(question.variants.mapIndexed { index, word ->
-                    InlineKeyboard("$CALLBACK_DATA_ANSWER_PREFIX$index", word.translate)
-                })
+                question.variants.mapIndexed { index, word ->
+                    listOf(InlineKeyboard("$CALLBACK_DATA_ANSWER_PREFIX$index", word.translate))
+                }
             )
         )
 
