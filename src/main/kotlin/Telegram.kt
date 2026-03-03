@@ -88,14 +88,19 @@ fun main(args: Array<String>) {
         val response: Response = json.decodeFromString(responseString)
         if (response.result.isEmpty()) continue
         val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdates(telegramBotService,it, json, trainers) }
+        sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers) }
         updateId = sortedUpdates.last().updateId + 1
 
 
     }
 }
 
-fun handleUpdates(telegramBotService: TelegramBotService, update: Update, json: Json, trainers: HashMap<Long, LearnWordsTrainer>) {
+fun handleUpdates(
+    telegramBotService: TelegramBotService,
+    update: Update,
+    json: Json,
+    trainers: HashMap<Long, LearnWordsTrainer>
+) {
     val messageMatchResult = update.message?.text
     val chatIdMatchResult = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
     val data = update.callbackQuery?.data
