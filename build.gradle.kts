@@ -24,7 +24,12 @@ kotlin {
     jvmToolchain(19)
 }
 
-
 application {
-    mainClass.set("TelegramKt")
+    mainClass.set("org.example.TelegramKt")
+}
+
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = "org.example.TelegramKt"
+    }
 }

@@ -22,8 +22,12 @@ data class Update(
 
 @Serializable
 data class Response(
+    val ok: Boolean,
     @SerialName("result")
-    val result: List<Update>,
+    val result: List<Update>? = null,
+    @SerialName("error_code")
+    val errorCode: Int? = null,
+    val description: String? = null,
 )
 
 @Serializable
@@ -86,12 +90,10 @@ fun main(args: Array<String>) {
         val responseString: String = telegramBotService.getUpdates(updateId)
         println(responseString)
         val response: Response = json.decodeFromString(responseString)
-        if (response.result.isEmpty()) continue
+        if (response.result.isNullOrEmpty()) continue
         val sortedUpdates = response.result.sortedBy { it.updateId }
         sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers) }
-        updateId = sortedUpdates.last().updateId + 1
-
-
+        updateId = sortedUpdates.lastOrNull()?.updateId ?: updateId
     }
 }
 
