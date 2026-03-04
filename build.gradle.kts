@@ -24,6 +24,7 @@ kotlin {
     jvmToolchain(19)
 }
 
+
 application {
     mainClass.set("TelegramKt")
 }

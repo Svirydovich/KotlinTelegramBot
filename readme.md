@@ -20,6 +20,7 @@
 
 **Публикация и запуск**
 
+
 1.  Соберем shadowJar командой  `./gradlew shadowJar`
 2.  Копируем jar на наш VPS переименуя его одновременно в bot.jar:  `scp build/libs/WordsTelegramBot-1.0-SNAPSHOT-all.jar root@100.100.100.100:/root/bot.jar`
 3.  Копируем words.txt на VPS:  `scp words.txt root@100.100.100.100:/root/words.txt`
