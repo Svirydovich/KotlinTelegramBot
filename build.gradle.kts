@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.20"
     kotlin("plugin.serialization") version "2.2.20"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     application
 }
 
@@ -21,4 +22,14 @@ tasks.test {
 }
 kotlin {
     jvmToolchain(19)
+}
+
+application {
+    mainClass.set("org.example.TelegramKt")
+}
+
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = "org.example.TelegramKt"
+    }
 }
