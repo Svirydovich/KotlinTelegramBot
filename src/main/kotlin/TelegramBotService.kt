@@ -45,9 +45,9 @@ class TelegramBotService(val botToken: String) {
                         InlineKeyboard(LEARN_WORDS_CLICKED, "Изучать слова"),
                         InlineKeyboard(STATISTICS_CLICKED, "Статистика"),
                     ),
-                    listOf(InlineKeyboard(RESET_CLICKED, "Сбросить прогресс"))
+                    listOf(InlineKeyboard(RESET_CLICKED, "Сбросить прогресс")),
                 )
-            )
+            ),
         )
 
         val requestBodyString = json.encodeToString(requestBody)
@@ -66,9 +66,12 @@ class TelegramBotService(val botToken: String) {
             chatId,
             question.correctAnswer.text,
             ReplyMarkup(
-                question.variants.mapIndexed { index, word ->
-                    listOf(InlineKeyboard("$CALLBACK_DATA_ANSWER_PREFIX$index", word.translate))
-                }
+                listOf(
+                    question.variants.mapIndexed { index, word ->
+                        InlineKeyboard("$CALLBACK_DATA_ANSWER_PREFIX$index", word.translate)
+                    },
+                    listOf(InlineKeyboard(MENU, "Выйти в меню")),
+                )
             )
         )
 
