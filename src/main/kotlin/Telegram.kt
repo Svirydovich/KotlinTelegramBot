@@ -85,9 +85,10 @@ fun main(args: Array<String>) {
 
     val trainers = HashMap<Long, LearnWordsTrainer>()
 
+
     while (true) {
         Thread.sleep(2000)
-        val responseString: String = telegramBotService.getUpdates(updateId)
+        val responseString: String = telegramBotService.getUpdates(updateId + 1)
         println(responseString)
         val response: Response = json.decodeFromString(responseString)
         if (response.result.isNullOrEmpty()) continue
@@ -115,7 +116,7 @@ fun handleUpdates(
         telegramBotService.sendMessage(json, chatIdMatchResult, HELLO)
     }
 
-    if (messageMatchResult?.lowercase() == MENU) {
+    if (messageMatchResult?.lowercase() == MENU || data == MENU) {
         telegramBotService.sendMenu(json, chatIdMatchResult)
     }
 
