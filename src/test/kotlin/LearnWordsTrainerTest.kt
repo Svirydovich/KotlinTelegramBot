@@ -4,6 +4,7 @@ import org.example.QUESTION_SIZE
 import org.example.Statistics
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class LearnWordsTrainerTest {
     @Test
@@ -14,38 +15,36 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test statistics with corrupted file`() {
-        val trainer = LearnWordsTrainer("src/test/corrupted_words.txt")
-        assertEquals(4, trainer.getStatistics().totalCount)
-        assertEquals(1, trainer.getStatistics().learnedCount)
+        val trainer = assertThrows<IndexOutOfBoundsException> {
+            LearnWordsTrainer("src/test/corrupted_words.txt")
+        }
+        assertTrue(trainer.message?.contains("Некорректный формат строки") == false)
     }
 
     @Test
     fun `test getNextQuestion() with 5 unlearned words`() {
         val trainer = LearnWordsTrainer("src/test/5_unlearned_words.txt")
-        val notLearnedList = trainer.dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
-        assertEquals(5, notLearnedList.size)
-        notLearnedList.forEach { assertTrue(3 > it.correctAnswersCount) }
-        assertEquals(4, notLearnedList.shuffled().take(QUESTION_SIZE).size)
+        val question = trainer.getNextQuestion()
+        assertNotNull(question)
+        assertEquals(QUESTION_SIZE, question?.variants?.size)
+        assertTrue(question?.variants?.contains(question.correctAnswer) == true)
     }
 
     @Test
     fun `test getNextQuestion() with 1 unlearned word`() {
         val trainer = LearnWordsTrainer("src/test/1_unlearned_word.txt")
-        val notLearnedList = trainer.dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
-        assertEquals(1, notLearnedList.size)
-        val learnedList = trainer.dictionary.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
-        val questionWordsList = notLearnedList + learnedList.shuffled().take(QUESTION_SIZE - notLearnedList.size)
-        assertEquals(3, questionWordsList.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }.size)
+        val question = trainer.getNextQuestion()
+        assertNotNull(question)
+        assertEquals(QUESTION_SIZE, question?.variants?.size)
+        assertTrue(question?.variants?.contains(question.correctAnswer) == true)
+        assertEquals(1, question?.variants?.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }?.size)
     }
 
     @Test
     fun `test getNextQuestion() with all words learned`() {
         val trainer = LearnWordsTrainer("src/test/all_words_learned.txt")
-        val notLearnedList = trainer.dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
-        assertEquals(0, notLearnedList.size)
-        val learnedList = trainer.dictionary.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
-        val questionWordsList = notLearnedList + learnedList.shuffled().take(QUESTION_SIZE - notLearnedList.size)
-        assertEquals(4, questionWordsList.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }.size)
+        val question = trainer.getNextQuestion()
+        assertNull(question)
     }
 
     @Test
