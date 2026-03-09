@@ -11,9 +11,8 @@ data class Question(val variants: List<Word>, val correctAnswer: Word)
 
 data class Statistics(val totalCount: Int, val learnedCount: Int, val percent: Int)
 
-class LearnWordsTrainer(private val fileName: String = "words.txt") {
+class LearnWordsTrainer(private val userDictionary: IUserDictionary) {
     var question: Question? = null
-    private val dictionary = loadDictionary()
 
     fun checkNextQuestionAndSend(json: Json, telegramBotService: TelegramBotService, chatId: Long) {
         val question = getNextQuestion()
@@ -23,8 +22,8 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
     }
 
     fun getStatistics(): Statistics {
-        val totalCount = dictionary.size
-        val learnedCount = dictionary.count { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
+        val totalCount = userDictionary.getSize()
+        val learnedCount = userDictionary.getNumOfLearnedWords()
         if (totalCount > 0) {
             val percent = learnedCount * TOTAL_PERCENTS / totalCount
             return Statistics(totalCount, learnedCount, percent)
@@ -34,11 +33,11 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
     }
 
     fun getNextQuestion(): Question? {
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < NORM_OF_CORRECT_ANSWERS }
+        val notLearnedList = userDictionary.getUnlearnedWords()
         if (notLearnedList.isEmpty()) return null
 
         val questionWords = if (notLearnedList.size < QUESTION_SIZE) {
-            val learnedList = dictionary.filter { it.correctAnswersCount >= NORM_OF_CORRECT_ANSWERS }
+            val learnedList = userDictionary.getLearnedWords()
             notLearnedList + learnedList.shuffled().take(QUESTION_SIZE - notLearnedList.size)
         } else notLearnedList.shuffled().take(QUESTION_SIZE)
 
@@ -51,45 +50,11 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
         return question?.let {
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
             if (correctAnswerId == userAnswerId) {
-                it.correctAnswer.correctAnswersCount++
-                saveDictionary()
+                userDictionary.setCorrectAnswersCount(it.correctAnswer.text, it.correctAnswer.correctAnswersCount + 1)
                 true
             } else false
         } ?: false
     }
 
-    private fun loadDictionary(): MutableList<Word> {
-        val wordsFile = File(fileName)
-        if (!wordsFile.exists()) File("words.txt").copyTo(wordsFile)
-        wordsFile.createNewFile()
-
-        val dictionary = mutableListOf<Word>()
-
-        for (word in wordsFile.readLines()) {
-            val parts = word.split("|")
-            dictionary.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0))
-        }
-
-        return dictionary
-    }
-
-    private fun saveDictionary() {
-        val wordsFile = File(fileName)
-
-        try {
-            val content = dictionary.joinToString("\n") {
-                "${it.text}|${it.translate}|${it.correctAnswersCount}"
-            }
-
-            wordsFile.writeText(content)
-
-        } catch (e: Exception) {
-            println("An error occurred while writing to the file: ${e.message}")
-        }
-    }
-
-    fun resetProgress() {
-        dictionary.forEach { it.correctAnswersCount = 0 }
-        saveDictionary()
-    }
+    fun resetProgress() = userDictionary.resetUserProgress()
 }
