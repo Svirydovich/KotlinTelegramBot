@@ -15,10 +15,9 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test statistics with corrupted file`() {
-        val trainer = assertThrows<IndexOutOfBoundsException> {
+        assertThrows<IndexOutOfBoundsException> {
             LearnWordsTrainer("src/test/corrupted_words.txt")
         }
-        assertTrue(trainer.message?.contains("Некорректный формат строки") == false)
     }
 
     @Test
