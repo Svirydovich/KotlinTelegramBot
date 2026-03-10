@@ -31,11 +31,27 @@ data class Response(
 )
 
 @Serializable
+data class Document(
+    @SerialName("file_name")
+    val fileName: String,
+    @SerialName("mime_type")
+    val mimeType: String,
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+)
+
+@Serializable
 data class Message(
     @SerialName("text")
-    val text: String,
+    val text: String? = null,
     @SerialName("chat")
     val chat: Chat,
+    @SerialName("document")
+    val document: Document? = null,
 )
 
 @Serializable
@@ -76,6 +92,31 @@ data class InlineKeyboard(
     val text: String,
 )
 
+@Serializable
+data class GetFileRequest(
+    val fileId: String
+)
+
+@Serializable
+data class GetFileResponse(
+    @SerialName("ok")
+    val ok: Boolean,
+    @SerialName("result")
+    val result: TelegramFile? = null,
+)
+
+@Serializable
+data class TelegramFile(
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+    @SerialName("file_path")
+    val filePath: String,
+)
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
@@ -107,6 +148,7 @@ fun handleUpdates(
     val messageMatchResult = update.message?.text
     val chatIdMatchResult = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
     val data = update.callbackQuery?.data
+    val document = update.message?.document
 
     val trainer = trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer("$chatIdMatchResult.txt") }
 
@@ -154,5 +196,23 @@ fun handleUpdates(
     if (data == RESET_CLICKED) {
         trainer.resetProgress()
         telegramBotService.sendMessage(json, chatIdMatchResult, "Прогресс сброшен")
+    }
+
+    if (update.message?.document != null) {
+        val fileId = update.message.document.fileId
+        try {
+            telegramBotService.getFile(fileId, json)
+            telegramBotService.sendMessage(json, chatIdMatchResult, "Документ получен! Содержимое выведено в консоль.")
+        } catch (e: Exception) {
+            telegramBotService.sendMessage(json, chatIdMatchResult, "Не удалось получить файл: ${e.message}")
+        }
+    }
+
+    if (document != null) {
+        val jsonResponse = telegramBotService.getFile(document.fileId, json)
+        val response: GetFileResponse = json.decodeFromString(jsonResponse)
+        response.result?.let {
+            telegramBotService.downloadFile(it.filePath, it.fileUniqueId)
+        }
     }
 }
