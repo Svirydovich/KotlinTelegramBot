@@ -4,11 +4,9 @@ const val TOTAL_PERCENTS = 100
 const val NORM_OF_CORRECT_ANSWERS = 3
 const val QUESTION_SIZE = 4
 
-fun Question.printQuestion() {
-    println("\n${correctAnswer.text}:")
-    variants.forEachIndexed { index, word -> println("${index + 1} - ${word.translate}") }
-    println("----------\n0 - Меню")
-    println("\nВведите номер:")
+fun Question.asConsoleString(): String {
+    val variants = this.variants.mapIndexed { index, word -> "${index + 1} - ${word.translate}" }.joinToString("\n")
+    return this.correctAnswer.text + "\n" + variants + "\n----------\n0 - Меню\nВведите номер:"
 }
 
 fun main() {
@@ -36,7 +34,7 @@ fun main() {
                         println("Все слова в словаре выучены!")
                         break
                     } else {
-                        question.printQuestion()
+                        println(question.asConsoleString())
 
                         val userAnswerInput = readln().toIntOrNull()
 
