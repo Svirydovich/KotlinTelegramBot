@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import java.io.File
 
 const val MENU = "/start"
 const val HELLO = "Hello"
@@ -94,6 +95,7 @@ data class InlineKeyboard(
 
 @Serializable
 data class GetFileRequest(
+    @SerialName("file_id")
     val fileId: String
 )
 
@@ -198,21 +200,25 @@ fun handleUpdates(
         telegramBotService.sendMessage(json, chatIdMatchResult, "Прогресс сброшен")
     }
 
-    if (update.message?.document != null) {
-        val fileId = update.message.document.fileId
-        try {
-            telegramBotService.getFile(fileId, json)
-            telegramBotService.sendMessage(json, chatIdMatchResult, "Документ получен! Содержимое выведено в консоль.")
-        } catch (e: Exception) {
-            telegramBotService.sendMessage(json, chatIdMatchResult, "Не удалось получить файл: ${e.message}")
-        }
-    }
-
     if (document != null) {
         val jsonResponse = telegramBotService.getFile(document.fileId, json)
         val response: GetFileResponse = json.decodeFromString(jsonResponse)
-        response.result?.let {
-            telegramBotService.downloadFile(it.filePath, it.fileUniqueId)
+        response.result?.let { it ->
+            val downloadedFile = telegramBotService.downloadFile(it.filePath, it.fileUniqueId)
+
+            val newWords = mutableListOf<Word>()
+            for (word in File(downloadedFile).readLines()) {
+                val parts = word.split("|")
+                newWords.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0))
+            }
+
+            newWords.forEach { word ->
+                if (trainer.dictionary.none { it.text == word.text }) {
+                    trainer.dictionary.add(word)
+                }
+            }
+
+            trainer.saveDictionary()
         }
     }
 }

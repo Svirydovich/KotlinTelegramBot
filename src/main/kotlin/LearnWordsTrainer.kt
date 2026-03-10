@@ -13,7 +13,7 @@ data class Statistics(val totalCount: Int, val learnedCount: Int, val percent: I
 
 class LearnWordsTrainer(private val fileName: String = "words.txt") {
     var question: Question? = null
-    private val dictionary = loadDictionary()
+    val dictionary = loadDictionary()
 
     fun checkNextQuestionAndSend(json: Json, telegramBotService: TelegramBotService, chatId: Long) {
         val question = getNextQuestion()
@@ -73,7 +73,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
         return dictionary
     }
 
-    private fun saveDictionary() {
+    fun saveDictionary() {
         val wordsFile = File(fileName)
 
         try {
