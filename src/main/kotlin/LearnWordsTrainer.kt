@@ -73,7 +73,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
         return dictionary
     }
 
-    private fun saveDictionary() {
+    fun saveDictionary() {
         val wordsFile = File(fileName)
 
         try {
