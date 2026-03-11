@@ -93,7 +93,7 @@ class TelegramBotService(val botToken: String) {
         val urlGetFile = "$BASE_URL$botToken/getFile"
         val requestBody = GetFileRequest(fileId = fileId)
         val requestBodyString = json.encodeToString(requestBody)
-        val client: HttpClient = HttpClient.newBuilder().build()
+        val client = this.client
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create(urlGetFile))
             .header("Content-type", "application/json")
@@ -108,7 +108,6 @@ class TelegramBotService(val botToken: String) {
 
     fun downloadFile(filePath: String, fileName: String): String {
         val urlGetFile = "$BOT_FILE_URL$botToken/$filePath"
-        println(urlGetFile)
         val request = HttpRequest
             .newBuilder()
             .uri(URI.create(urlGetFile))
@@ -118,8 +117,6 @@ class TelegramBotService(val botToken: String) {
         val response: HttpResponse<InputStream> = HttpClient
             .newHttpClient()
             .send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-        println("status code: " + response.statusCode())
 
         val outputFile = File(fileName)
         response.body().use { input ->
