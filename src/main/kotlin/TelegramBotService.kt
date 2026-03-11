@@ -159,11 +159,11 @@ class TelegramBotService(val botToken: String) {
         }
 
         val imagePath = word.imagePath ?: return null
-        val file = File(imagePath)
-        if (!file.exists()) return null
+        val imageFile = File(imagePath)
+        if (!imageFile.exists()) return null
 
         val request = HttpRequest.newBuilder()
-            .uri(URI.create("$BOT_FILE_URL$botToken/sendPhoto"))
+            .uri(URI.create("$BASE_URL$botToken/sendPhoto"))
             .postMultipartFormData(boundary, data)
             .build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())

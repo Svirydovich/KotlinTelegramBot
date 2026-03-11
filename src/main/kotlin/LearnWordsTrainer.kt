@@ -78,8 +78,8 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
                     parts[0],
                     parts[1],
                     parts[2].toIntOrNull() ?: 0,
-                    parts[3],
-                    parts[4]
+                    parts.getOrNull(3),
+                    parts.getOrNull(4)
                 )
             )
         }
