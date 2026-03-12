@@ -230,7 +230,15 @@ fun handleUpdates(
             val newWords = mutableListOf<Word>()
             for (word in File(downloadedFile).readLines()) {
                 val parts = word.split("|")
-                newWords.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0, parts[3], parts[4]))
+                newWords.add(
+                    Word(
+                        parts[0],
+                        parts[1],
+                        parts[2].toIntOrNull() ?: 0,
+                        parts.getOrNull(3),
+                        parts.getOrNull(4)
+                    )
+                )
             }
 
             newWords.forEach { word ->
@@ -244,15 +252,12 @@ fun handleUpdates(
     }
 
     trainer.dictionary.forEach { word ->
-        if (word.imagePath != null && word.imageFileId == null) {
-            val file = File(word.imagePath)
-            if (file.exists()) {
-                val fileId = telegramBotService.sendPhoto(file, chatIdMatchResult, json, true, word)
-                if (fileId != null) {
-                    word.imageFileId = fileId
-                    trainer.saveDictionary()
-                }
-            }
+        val file = word.imagePath?.let { File(it) }
+        val fileId = telegramBotService.sendPhoto(file, chatIdMatchResult, json, hasSpoiler = true, word = word)
+
+        if (fileId != null) {
+            word.imageFileId = fileId
+            trainer.saveDictionary()
         }
     }
 }

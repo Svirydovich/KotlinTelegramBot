@@ -133,13 +133,7 @@ class TelegramBotService(val botToken: String) {
         return outputFile.absolutePath
     }
 
-    fun sendPhoto(file: File, chatId: Long, json: Json, hasSpoiler: Boolean, word: Word): String? {
-        val data: MutableMap<String, Any> = LinkedHashMap()
-        data["chat_id"] = chatId.toString()
-        data["photo"] = file
-        data["has_spoiler"] = hasSpoiler
-        val boundary: String = BigInteger(35, Random()).toString()
-
+    fun sendPhoto(file: File?, chatId: Long, json: Json, hasSpoiler: Boolean, word: Word): String? {
         word.imageFileId?.let { existingFileId ->
             val urlSendPhoto = "$BASE_URL$botToken/sendPhoto"
             val requestBody = mapOf(
@@ -158,14 +152,20 @@ class TelegramBotService(val botToken: String) {
             return sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         }
 
-        val imagePath = word.imagePath ?: return null
-        val imageFile = File(imagePath)
-        if (!imageFile.exists()) return null
+        file?.exists()?.let { if (!it) return null }
+
+        val data: MutableMap<String, Any> = LinkedHashMap()
+        data["chat_id"] = chatId.toString()
+        data["photo"] = file as Any
+        data["has_spoiler"] = hasSpoiler
+
+        val boundary: String = BigInteger(35, Random()).toString()
 
         val request = HttpRequest.newBuilder()
             .uri(URI.create("$BASE_URL$botToken/sendPhoto"))
             .postMultipartFormData(boundary, data)
             .build()
+
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(response.body())
 
