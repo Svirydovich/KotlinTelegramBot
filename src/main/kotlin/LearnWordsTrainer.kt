@@ -25,16 +25,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
         val question = getNextQuestion()
 
         if (question == null) telegramBotService.sendMessage(json, chatId, "Все слова в словаре выучены")
-        else {
-            question.correctAnswer.imagePath?.let { path ->
-                val file = File(path)
-                if (file.exists()) {
-                    telegramBotService.sendPhoto(file, chatId, json, hasSpoiler = true, question.correctAnswer)
-                }
-            }
-
-            telegramBotService.sendQuestion(json, chatId, question)
-        }
+        else telegramBotService.sendQuestion(json, chatId, question)
     }
 
     fun getStatistics(): Statistics {
@@ -88,7 +79,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
                     parts[1],
                     parts[2].toIntOrNull() ?: 0,
                     parts.getOrNull(3),
-                    parts.getOrNull(4)
+                    parts.getOrNull(4)?.ifEmpty { null }
                 )
             )
         }

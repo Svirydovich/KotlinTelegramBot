@@ -236,7 +236,7 @@ fun handleUpdates(
                         parts[1],
                         parts[2].toIntOrNull() ?: 0,
                         parts.getOrNull(3),
-                        parts.getOrNull(4)
+                        parts.getOrNull(4)?.ifEmpty { null }
                     )
                 )
             }
@@ -247,16 +247,6 @@ fun handleUpdates(
                 }
             }
 
-            trainer.saveDictionary()
-        }
-    }
-
-    trainer.dictionary.forEach { word ->
-        val file = word.imagePath?.let { File(it) }
-        val fileId = telegramBotService.sendPhoto(file, chatIdMatchResult, json, hasSpoiler = true, word = word)
-
-        if (fileId != null) {
-            word.imageFileId = fileId
             trainer.saveDictionary()
         }
     }

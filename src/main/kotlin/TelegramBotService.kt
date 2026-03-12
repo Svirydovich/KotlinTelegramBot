@@ -71,6 +71,13 @@ class TelegramBotService(val botToken: String) {
     fun sendQuestion(json: Json, chatId: Long, question: Question): String {
         val urlSendMessage = "$BASE_URL$botToken/sendMessage"
 
+        question.correctAnswer.imagePath?.let { path ->
+            val file = File(path)
+            if (file.exists()) {
+                sendPhoto(file, chatId, json, hasSpoiler = true, word = question.correctAnswer)
+            }
+        }
+
         val requestBody = SendMessageRequest(
             chatId,
             question.correctAnswer.text,
