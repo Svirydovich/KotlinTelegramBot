@@ -145,7 +145,8 @@ class TelegramBotService(val botToken: String) {
             val urlSendPhoto = "$BASE_URL$botToken/sendPhoto"
             val requestBody = mapOf(
                 "chat_id" to chatId.toString(),
-                "photo" to existingFileId
+                "photo" to existingFileId,
+                "has_spoiler" to hasSpoiler.toString()
             )
             val jsonBody = json.encodeToString(requestBody)
             val request = HttpRequest.newBuilder()
