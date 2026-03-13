@@ -235,7 +235,7 @@ fun handleUpdates(
                         parts[0],
                         parts[1],
                         parts[2].toIntOrNull() ?: 0,
-                        parts.getOrNull(3),
+                        parts.getOrNull(3)?.ifEmpty { null },
                         parts.getOrNull(4)?.ifEmpty { null }
                     )
                 )
