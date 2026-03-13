@@ -46,6 +46,24 @@ data class Document(
 )
 
 @Serializable
+data class SendPhotoResponse(
+    val ok: Boolean,
+    val result: Message? = null
+)
+
+@Serializable
+data class PhotoSize(
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+    val width: Int,
+    val height: Int
+)
+
+@Serializable
 data class Message(
     @SerialName("text")
     val text: String? = null,
@@ -53,6 +71,9 @@ data class Message(
     val chat: Chat,
     @SerialName("document")
     val document: Document? = null,
+    @SerialName("message_id")
+    val messageId: Long,
+    val photo: List<PhotoSize>? = null,
 )
 
 @Serializable
@@ -209,7 +230,15 @@ fun handleUpdates(
             val newWords = mutableListOf<Word>()
             for (word in File(downloadedFile).readLines()) {
                 val parts = word.split("|")
-                newWords.add(Word(parts[0], parts[1], parts[2].toIntOrNull() ?: 0))
+                newWords.add(
+                    Word(
+                        parts[0],
+                        parts[1],
+                        parts[2].toIntOrNull() ?: 0,
+                        parts.getOrNull(3)?.ifEmpty { null },
+                        parts.getOrNull(4)?.ifEmpty { null }
+                    )
+                )
             }
 
             newWords.forEach { word ->
