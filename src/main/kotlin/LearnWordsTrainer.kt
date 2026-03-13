@@ -78,7 +78,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
                     parts[0],
                     parts[1],
                     parts[2].toIntOrNull() ?: 0,
-                    parts.getOrNull(3),
+                    parts.getOrNull(3)?.ifEmpty { null },
                     parts.getOrNull(4)?.ifEmpty { null }
                 )
             )
@@ -92,7 +92,7 @@ class LearnWordsTrainer(private val fileName: String = "words.txt") {
 
         try {
             val content = dictionary.joinToString("\n") {
-                "${it.text}|${it.translate}|${it.correctAnswersCount}|${it.imagePath}|${it.imageFileId}"
+                "${it.text}|${it.translate}|${it.correctAnswersCount}|${it.imagePath ?: ""}|${it.imageFileId ?: ""}"
             }
 
             wordsFile.writeText(content)
