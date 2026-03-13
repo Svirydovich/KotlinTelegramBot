@@ -160,11 +160,11 @@ class TelegramBotService(val botToken: String) {
             return sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         }
 
-        file?.exists()?.let { if (!it) return null }
+        if (file == null || !file.exists()) return null
 
         val data: MutableMap<String, Any> = LinkedHashMap()
         data["chat_id"] = chatId.toString()
-        data["photo"] = file as Any
+        data["photo"] = file
         data["has_spoiler"] = hasSpoiler
 
         val boundary: String = BigInteger(35, Random()).toString()
