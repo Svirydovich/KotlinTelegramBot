@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Random
+import java.util.concurrent.ConcurrentHashMap
 
 const val BASE_URL = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
@@ -218,4 +219,74 @@ class TelegramBotService(val botToken: String) {
         return this
     }
 
+    fun editMessage(json: Json, chatId: Long, messageId: Long, message: String) {
+        val urlEditMessage = "$BASE_URL$botToken/editMessageText"
+
+        val requestBody = mapOf(
+            "chat_id" to chatId.toString(),
+            "message_id" to messageId.toString(),
+            "text" to message
+        )
+
+        val requestBodyString = json.encodeToString(requestBody)
+
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlEditMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+    }
+
+    fun editMessageWithKeyboard(json: Json, chatId: Long, messageId: Long, text: String, replyMarkup: String) {
+        val data: MutableMap<String, Any> = LinkedHashMap()
+        data["chat_id"] = chatId.toString()
+        data["message_id"] = messageId.toString()
+        data["text"] = text
+        data["reply_markup"] = replyMarkup
+        data["parse_mode"] = "HTML"
+
+        val urlEditMessage = "$BASE_URL$botToken/editMessageText"
+        val requestBodyString = json.encodeToString(data)
+
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlEditMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+
+        if (response.contains("MESSAGE_NOT_MODIFIED")) println("Ошибка: текст сообщения не был изменён!")
+    }
+
+}
+
+class DynamicMessage(private val botService: TelegramBotService) {
+    val userMessages: ConcurrentHashMap<Long, MutableList<Pair<Long, String>>> = ConcurrentHashMap()
+
+    fun setMessageId(chatId: Long, messageId: Long, text: String) {
+        val history = userMessages.getOrPut(chatId) { mutableListOf() }
+        history.add(messageId to text)
+    }
+
+    fun updateMessage(json: Json, chatId: Long, newText: String) {
+        val lastMessageId = userMessages[chatId]?.lastOrNull() ?: return
+        botService.editMessage(json, chatId, lastMessageId.first, newText)
+    }
+
+    fun undo(json: Json, chatId: Long) {
+        val history = userMessages[chatId] ?: return
+        if (history.size < 2) return
+        history.removeAt(history.size - 1)
+        val (messageId, previousText) = history.last()
+        botService.editMessage(json, chatId, messageId, previousText)
+    }
+
+    fun getProgressBar(percent: Int, length: Int = 10): String {
+        val filled = (percent * length / 100).coerceIn(0, length)
+        val empty = length - filled
+        return '[' + "█".repeat(filled) + "▒".repeat(empty) + "] $percent%"
+    }
 }
