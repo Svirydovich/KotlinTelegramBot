@@ -157,7 +157,7 @@ class TelegramBotService(val botToken: String) {
                 .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(response.body())
+            val sendPhotoResponse = json.decodeFromString<SendResponse>(response.body())
             return sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         }
 
@@ -176,7 +176,7 @@ class TelegramBotService(val botToken: String) {
             .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(response.body())
+        val sendPhotoResponse = json.decodeFromString<SendResponse>(response.body())
 
         val fileId = sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         if (fileId != null) {
@@ -236,7 +236,8 @@ class TelegramBotService(val botToken: String) {
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
 
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        if (response.contains("MESSAGE_NOT_MODIFIED")) println("Ошибка: текст сообщения не был изменён!")
     }
 
     fun editMessageWithKeyboard(json: Json, chatId: Long, messageId: Long, text: String, replyMarkup: String) {

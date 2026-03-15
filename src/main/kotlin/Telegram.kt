@@ -46,7 +46,7 @@ data class Document(
 )
 
 @Serializable
-data class SendPhotoResponse(
+data class SendResponse(
     val ok: Boolean,
     val result: Message? = null
 )
@@ -190,7 +190,7 @@ fun handleUpdates(
     if (data?.lowercase() == STATISTICS_CLICKED) {
         val statsText = "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
         val responseString = telegramBotService.sendMessage(json, chatIdMatchResult, statsText)
-        val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(responseString)
+        val sendPhotoResponse = json.decodeFromString<SendResponse>(responseString)
         sendPhotoResponse.result?.messageId?.let { messageId ->
             dynamicMessage.setMessageId(chatIdMatchResult, messageId, statsText)
         }
