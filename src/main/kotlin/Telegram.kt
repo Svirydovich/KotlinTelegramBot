@@ -144,6 +144,7 @@ fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
     val telegramBotService = TelegramBotService(botToken)
+    val dynamicMessage = DynamicMessage(telegramBotService)
 
     val json = Json { ignoreUnknownKeys = true }
 
@@ -157,7 +158,7 @@ fun main(args: Array<String>) {
         val response: Response = json.decodeFromString(responseString)
         if (response.result.isNullOrEmpty()) continue
         val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers) }
+        sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers, dynamicMessage) }
         updateId = sortedUpdates.lastOrNull()?.updateId ?: updateId
     }
 }
@@ -166,7 +167,8 @@ fun handleUpdates(
     telegramBotService: TelegramBotService,
     update: Update,
     json: Json,
-    trainers: HashMap<Long, LearnWordsTrainer>
+    trainers: HashMap<Long, LearnWordsTrainer>,
+    dynamicMessage: DynamicMessage
 ) {
     val messageMatchResult = update.message?.text
     val chatIdMatchResult = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
@@ -185,11 +187,14 @@ fun handleUpdates(
         telegramBotService.sendMenu(json, chatIdMatchResult)
     }
 
-    if (data?.lowercase() == STATISTICS_CLICKED) telegramBotService.sendMessage(
-        json,
-        chatIdMatchResult,
-        "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
-    )
+    if (data?.lowercase() == STATISTICS_CLICKED) {
+        val statsText = "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
+        val responseString = telegramBotService.sendMessage(json, chatIdMatchResult, statsText)
+        val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(responseString)
+        sendPhotoResponse.result?.messageId?.let { messageId ->
+            dynamicMessage.setMessageId(chatIdMatchResult, messageId, statsText)
+        }
+    }
 
     if (data?.lowercase() == LEARN_WORDS_CLICKED) {
         trainer.checkNextQuestionAndSend(json, telegramBotService, chatIdMatchResult)

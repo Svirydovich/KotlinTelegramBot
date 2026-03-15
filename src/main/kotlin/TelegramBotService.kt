@@ -264,7 +264,7 @@ class TelegramBotService(val botToken: String) {
 }
 
 class DynamicMessage(private val botService: TelegramBotService) {
-    val userMessages: ConcurrentHashMap<Long, MutableList<Pair<Long, String>>> = ConcurrentHashMap()
+    private val userMessages: ConcurrentHashMap<Long, MutableList<Pair<Long, String>>> = ConcurrentHashMap()
 
     fun setMessageId(chatId: Long, messageId: Long, text: String) {
         val history = userMessages.getOrPut(chatId) { mutableListOf() }
