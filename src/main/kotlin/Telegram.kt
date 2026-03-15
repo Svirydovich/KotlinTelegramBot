@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import java.io.File
 
 const val MENU = "/start"
 const val HELLO = "Hello"
@@ -31,11 +32,48 @@ data class Response(
 )
 
 @Serializable
+data class Document(
+    @SerialName("file_name")
+    val fileName: String,
+    @SerialName("mime_type")
+    val mimeType: String,
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+)
+
+@Serializable
+data class SendPhotoResponse(
+    val ok: Boolean,
+    val result: Message? = null
+)
+
+@Serializable
+data class PhotoSize(
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+    val width: Int,
+    val height: Int
+)
+
+@Serializable
 data class Message(
     @SerialName("text")
-    val text: String,
+    val text: String? = null,
     @SerialName("chat")
     val chat: Chat,
+    @SerialName("document")
+    val document: Document? = null,
+    @SerialName("message_id")
+    val messageId: Long,
+    val photo: List<PhotoSize>? = null,
 )
 
 @Serializable
@@ -76,6 +114,32 @@ data class InlineKeyboard(
     val text: String,
 )
 
+@Serializable
+data class GetFileRequest(
+    @SerialName("file_id")
+    val fileId: String
+)
+
+@Serializable
+data class GetFileResponse(
+    @SerialName("ok")
+    val ok: Boolean,
+    @SerialName("result")
+    val result: TelegramFile? = null,
+)
+
+@Serializable
+data class TelegramFile(
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+    @SerialName("file_path")
+    val filePath: String,
+)
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
@@ -107,6 +171,7 @@ fun handleUpdates(
     val messageMatchResult = update.message?.text
     val chatIdMatchResult = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
     val data = update.callbackQuery?.data
+    val document = update.message?.document
 
     val trainer = trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer("$chatIdMatchResult.txt") }
 
@@ -154,5 +219,35 @@ fun handleUpdates(
     if (data == RESET_CLICKED) {
         trainer.resetProgress()
         telegramBotService.sendMessage(json, chatIdMatchResult, "Прогресс сброшен")
+    }
+
+    if (document != null) {
+        val jsonResponse = telegramBotService.getFile(document.fileId, json)
+        val response: GetFileResponse = json.decodeFromString(jsonResponse)
+        response.result?.let { it ->
+            val downloadedFile = telegramBotService.downloadFile(it.filePath, it.fileUniqueId)
+
+            val newWords = mutableListOf<Word>()
+            for (word in File(downloadedFile).readLines()) {
+                val parts = word.split("|")
+                newWords.add(
+                    Word(
+                        parts[0],
+                        parts[1],
+                        parts[2].toIntOrNull() ?: 0,
+                        parts.getOrNull(3)?.ifEmpty { null },
+                        parts.getOrNull(4)?.ifEmpty { null }
+                    )
+                )
+            }
+
+            newWords.forEach { word ->
+                if (trainer.dictionary.none { it.text == word.text }) {
+                    trainer.dictionary.add(word)
+                }
+            }
+
+            trainer.saveDictionary()
+        }
     }
 }

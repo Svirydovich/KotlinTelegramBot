@@ -5,7 +5,13 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 @Serializable
-data class Word(val text: String, val translate: String, var correctAnswersCount: Int = 0)
+data class Word(
+    val text: String,
+    val translate: String,
+    var correctAnswersCount: Int = 0,
+    val imagePath: String? = null,
+    var imageFileId: String? = null,
+)
 
 data class Question(val variants: List<Word>, val correctAnswer: Word)
 
@@ -13,6 +19,7 @@ data class Statistics(val totalCount: Int, val learnedCount: Int, val percent: I
 
 class LearnWordsTrainer(private val userDictionary: IUserDictionary) {
     var question: Question? = null
+    val dictionary = loadDictionary()
 
     fun checkNextQuestionAndSend(json: Json, telegramBotService: TelegramBotService, chatId: Long) {
         val question = getNextQuestion()
@@ -56,5 +63,46 @@ class LearnWordsTrainer(private val userDictionary: IUserDictionary) {
         } ?: false
     }
 
-    fun resetProgress() = userDictionary.resetUserProgress()
+    private fun loadDictionary(): MutableList<Word> {
+        val wordsFile = File(fileName)
+        if (!wordsFile.exists()) File("words.txt").copyTo(wordsFile)
+        wordsFile.createNewFile()
+
+        val dictionary = mutableListOf<Word>()
+
+        for (word in wordsFile.readLines()) {
+            val parts = word.split("|")
+            dictionary.add(
+                Word(
+                    parts[0],
+                    parts[1],
+                    parts[2].toIntOrNull() ?: 0,
+                    parts.getOrNull(3)?.ifEmpty { null },
+                    parts.getOrNull(4)?.ifEmpty { null }
+                )
+            )
+        }
+
+        return dictionary
+    }
+
+    fun saveDictionary() {
+        val wordsFile = File(fileName)
+
+        try {
+            val content = dictionary.joinToString("\n") {
+                "${it.text}|${it.translate}|${it.correctAnswersCount}|${it.imagePath ?: ""}|${it.imageFileId ?: ""}"
+            }
+
+            wordsFile.writeText(content)
+
+        } catch (e: Exception) {
+            println("An error occurred while writing to the file: ${e.message}")
+        }
+    }
+
+    fun resetProgress() {
+        dictionary.forEach { it.correctAnswersCount = 0 }
+        saveDictionary()
+    }
 }
