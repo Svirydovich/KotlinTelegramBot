@@ -57,6 +57,7 @@ interface IUserDictionary {
     fun getUnlearnedWords(): List<Word>
     fun setCorrectAnswersCount(word: String, correctAnswersCount: Int)
     fun resetUserProgress()
+    fun addWord(word: Word)
 }
 
 class FileUserDictionary(
@@ -89,7 +90,12 @@ class FileUserDictionary(
         saveDictionary()
     }
 
-    private fun loadDictionary(): List<Word> {
+    override fun addWord(word: Word) {
+        if (dictionary.none { it.text == word.text }) dictionary.add(word)
+        saveDictionary()
+    }
+
+    private fun loadDictionary(): MutableList<Word> {
         val wordsFile = File(fileName)
         if (!wordsFile.exists()) File("words.txt").copyTo(wordsFile)
         wordsFile.createNewFile()
@@ -124,8 +130,19 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db") : IUserDict
 
     private fun createTableIfNotExists() {
         getConnection().use { connection ->
-            val stmt = connection.createStatement()
-            stmt.executeUpdate(
+            val statement = connection.createStatement()
+            statement.executeUpdate("PRAGMA foreign_keys = ON;")
+            statement.executeUpdate(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username VARCHAR,
+                    created_at TIMESTAMP,
+                    chat_id INTEGER
+                );
+                """.trimIndent()
+            )
+            statement.executeUpdate(
                 """
                 CREATE TABLE IF NOT EXISTS words (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,43 +152,55 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db") : IUserDict
                 );
                 """.trimIndent()
             )
+            statement.executeUpdate(
+                """
+                    CREATE TABLE IF NOT EXISTS user_answers (
+                    user_id INTEGER,
+                    word_id INTEGER,
+                    correct_answer_count INTEGER,
+                    updated_at TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (word_id) REFERENCES words(id)
+                );
+                """.trimIndent()
+            )
             connection.commit()
         }
     }
 
     override fun getNumOfLearnedWords(): Int {
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "SELECT COUNT(*) FROM words WHERE correctAnswersCount >= ?"
             )
-            stmt.setInt(1, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            return if (rs.next()) rs.getInt(1) else 0
+            statement.setInt(1, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) resultSet.getInt(1) else 0
         }
     }
 
     override fun getSize(): Int {
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement("SELECT COUNT(*) FROM words")
-            val rs = stmt.executeQuery()
-            return if (rs.next()) rs.getInt(1) else 0
+            val statement = connection.prepareStatement("SELECT COUNT(*) FROM words")
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) resultSet.getInt(1) else 0
         }
     }
 
     override fun getLearnedWords(): List<Word> {
         val words = mutableListOf<Word>()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "SELECT text, translate, correctAnswersCount FROM words WHERE correctAnswersCount >= ?"
             )
-            stmt.setInt(1, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            while (rs.next()) {
+            statement.setInt(1, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
                 words.add(
                     Word(
-                        rs.getString("text"),
-                        rs.getString("translate"),
-                        rs.getInt("correctAnswersCount")
+                        resultSet.getString("text"),
+                        resultSet.getString("translate"),
+                        resultSet.getInt("correctAnswersCount")
                     )
                 )
             }
@@ -182,17 +211,17 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db") : IUserDict
     override fun getUnlearnedWords(): List<Word> {
         val words = mutableListOf<Word>()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "SELECT text, translate, correctAnswersCount FROM words WHERE correctAnswersCount < ?"
             )
-            stmt.setInt(1, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            while (rs.next()) {
+            statement.setInt(1, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
                 words.add(
                     Word(
-                        rs.getString("text"),
-                        rs.getString("translate"),
-                        rs.getInt("correctAnswersCount")
+                        resultSet.getString("text"),
+                        resultSet.getString("translate"),
+                        resultSet.getInt("correctAnswersCount")
                     )
                 )
             }
@@ -202,33 +231,33 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db") : IUserDict
 
     override fun setCorrectAnswersCount(word: String, correctAnswersCount: Int) {
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "UPDATE words SET correctAnswersCount = ? WHERE text = ?"
             )
-            stmt.setInt(1, correctAnswersCount)
-            stmt.setString(2, word)
-            stmt.executeUpdate()
+            statement.setInt(1, correctAnswersCount)
+            statement.setString(2, word)
+            statement.executeUpdate()
             connection.commit()
         }
     }
 
     override fun resetUserProgress() {
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement("UPDATE words SET correctAnswersCount = 0")
-            stmt.executeUpdate()
+            val statement = connection.prepareStatement("UPDATE words SET correctAnswersCount = 0")
+            statement.executeUpdate()
             connection.commit()
         }
     }
 
-    fun addWord(word: Word) {
+    override fun addWord(word: Word) {
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "INSERT INTO words (text, translate, correctAnswersCount) VALUES (?, ?, ?)"
             )
-            stmt.setString(1, word.text)
-            stmt.setString(2, word.translate)
-            stmt.setInt(3, word.correctAnswersCount)
-            stmt.executeUpdate()
+            statement.setString(1, word.text)
+            statement.setString(2, word.translate)
+            statement.setInt(3, word.correctAnswersCount)
+            statement.executeUpdate()
             connection.commit()
         }
     }
