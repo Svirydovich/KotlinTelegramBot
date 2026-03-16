@@ -15,7 +15,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Random
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.io.println
+import javax.swing.text.html.HTML
 
 const val BASE_URL = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
@@ -249,15 +249,17 @@ class TelegramBotService(val botToken: String) {
     }
 
     fun editMessageWithKeyboard(json: Json, chatId: Long, messageId: Long, text: String, replyMarkup: String) {
-        val data: MutableMap<String, Any> = LinkedHashMap()
-        data["chat_id"] = chatId.toString()
-        data["message_id"] = messageId.toString()
-        data["text"] = text
-        data["reply_markup"] = replyMarkup
-        data["parse_mode"] = "HTML"
-
         val urlEditMessage = "$BASE_URL$botToken/editMessageText"
-        val requestBodyString = json.encodeToString(data)
+
+        val requestBody = mapOf(
+            "chat_id" to chatId.toString(),
+            "message_id" to messageId.toString(),
+            "text" to text,
+            "reply_markup" to replyMarkup,
+            "parse_mode" to "HTML"
+        )
+
+        val requestBodyString = json.encodeToString(requestBody)
 
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create(urlEditMessage))
