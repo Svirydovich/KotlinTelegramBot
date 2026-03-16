@@ -15,6 +15,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Random
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.println
 
 const val BASE_URL = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
@@ -237,7 +238,14 @@ class TelegramBotService(val botToken: String) {
             .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
-        if (response.contains("MESSAGE_NOT_MODIFIED")) println("Ошибка: текст сообщения не был изменён!")
+        val sendResponse = json.decodeFromString<SendResponse>(response)
+        if (!sendResponse.ok) {
+            when {
+                response.contains("MESSAGE_NOT_MODIFIED") -> println("Ошибка: текст сообщения не был изменён!")
+                response.contains("MESSAGE_EDIT_TIME_EXPIRED") -> println("Ошибка: нельзя редактировать сообщения старше 48 часов!")
+                else -> println("Ошибка редактирования сообщения")
+            }
+        }
     }
 
     fun editMessageWithKeyboard(json: Json, chatId: Long, messageId: Long, text: String, replyMarkup: String) {

@@ -216,6 +216,10 @@ fun handleUpdates(
                     "Неправильно! ${correctAnswer?.text} – это $correctAnswerText"
                 )
             }
+            val updatedStatistics = trainer.getStatistics()
+            val statsText =
+                "Выучено ${updatedStatistics.learnedCount} из ${updatedStatistics.totalCount} слов | ${updatedStatistics.percent}%"
+            dynamicMessage.updateMessage(json, chatIdMatchResult, statsText)
 
             trainer.checkNextQuestionAndSend(json, telegramBotService, chatIdMatchResult)
         }
