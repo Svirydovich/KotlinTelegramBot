@@ -26,7 +26,10 @@ fun updateDictionary(wordsFile: File) {
     DriverManager.getConnection("jdbc:sqlite:data.db").use { connection ->
         connection.autoCommit = false
 
-        val insertSql = "INSERT INTO words (text, translate) VALUES (?, ?)"
+        val insertSql = """
+            INSERT INTO words (text, translate) VALUES (?, ?)
+            ON CONFLICT(text) DO UPDATE SET translate = excluded.translate
+        """.trimIndent()
         connection.prepareStatement(insertSql).use { stmt ->
             wordsFile.readLines().forEach { line ->
                 val parts = line.split("|")
@@ -126,7 +129,7 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db") : IUserDict
                 """
                 CREATE TABLE IF NOT EXISTS words (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    text TEXT NOT NULL,
+                    text TEXT NOT NULL UNIQUE,
                     translate TEXT NOT NULL,
                     correctAnswersCount INTEGER DEFAULT 0
                 );
