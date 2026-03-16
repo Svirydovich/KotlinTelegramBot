@@ -15,7 +15,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Random
 import java.util.concurrent.ConcurrentHashMap
-import javax.swing.text.html.HTML
 
 const val BASE_URL = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"

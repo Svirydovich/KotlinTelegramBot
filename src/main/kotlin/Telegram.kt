@@ -163,6 +163,9 @@ fun main(args: Array<String>) {
     }
 }
 
+fun statsText(statistics: Statistics) =
+    "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
+
 fun handleUpdates(
     telegramBotService: TelegramBotService,
     update: Update,
@@ -188,11 +191,10 @@ fun handleUpdates(
     }
 
     if (data?.lowercase() == STATISTICS_CLICKED) {
-        val statsText = "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
-        val responseString = telegramBotService.sendMessage(json, chatIdMatchResult, statsText)
+        val responseString = telegramBotService.sendMessage(json, chatIdMatchResult, statsText(statistics))
         val sendPhotoResponse = json.decodeFromString<SendResponse>(responseString)
         sendPhotoResponse.result?.messageId?.let { messageId ->
-            dynamicMessage.setMessageId(chatIdMatchResult, messageId, statsText)
+            dynamicMessage.setMessageId(chatIdMatchResult, messageId, statsText(statistics))
         }
     }
 
@@ -217,9 +219,7 @@ fun handleUpdates(
                 )
             }
             val updatedStatistics = trainer.getStatistics()
-            val statsText =
-                "Выучено ${updatedStatistics.learnedCount} из ${updatedStatistics.totalCount} слов | ${updatedStatistics.percent}%"
-            dynamicMessage.updateMessage(json, chatIdMatchResult, statsText)
+            dynamicMessage.updateMessage(json, chatIdMatchResult, statsText(updatedStatistics))
 
             trainer.checkNextQuestionAndSend(json, telegramBotService, chatIdMatchResult)
         }
