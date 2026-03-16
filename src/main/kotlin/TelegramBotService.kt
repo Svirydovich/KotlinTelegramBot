@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Random
+import java.util.concurrent.ConcurrentHashMap
 
 const val BASE_URL = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
@@ -156,7 +157,7 @@ class TelegramBotService(val botToken: String) {
                 .build()
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(response.body())
+            val sendPhotoResponse = json.decodeFromString<SendResponse>(response.body())
             return sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         }
 
@@ -175,7 +176,7 @@ class TelegramBotService(val botToken: String) {
             .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(response.body())
+        val sendPhotoResponse = json.decodeFromString<SendResponse>(response.body())
 
         val fileId = sendPhotoResponse.result?.photo?.lastOrNull()?.fileId
         if (fileId != null) {
@@ -218,4 +219,84 @@ class TelegramBotService(val botToken: String) {
         return this
     }
 
+    fun editMessage(json: Json, chatId: Long, messageId: Long, message: String) {
+        val urlEditMessage = "$BASE_URL$botToken/editMessageText"
+
+        val requestBody = mapOf(
+            "chat_id" to chatId.toString(),
+            "message_id" to messageId.toString(),
+            "text" to message
+        )
+
+        val requestBodyString = json.encodeToString(requestBody)
+
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlEditMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val sendResponse = json.decodeFromString<SendResponse>(response)
+        if (!sendResponse.ok) {
+            when {
+                response.contains("MESSAGE_NOT_MODIFIED") -> println("Ошибка: текст сообщения не был изменён!")
+                response.contains("MESSAGE_EDIT_TIME_EXPIRED") -> println("Ошибка: нельзя редактировать сообщения старше 48 часов!")
+                else -> println("Ошибка редактирования сообщения")
+            }
+        }
+    }
+
+    fun editMessageWithKeyboard(json: Json, chatId: Long, messageId: Long, text: String, replyMarkup: String) {
+        val urlEditMessage = "$BASE_URL$botToken/editMessageText"
+
+        val requestBody = mapOf(
+            "chat_id" to chatId.toString(),
+            "message_id" to messageId.toString(),
+            "text" to text,
+            "reply_markup" to replyMarkup,
+            "parse_mode" to "HTML"
+        )
+
+        val requestBodyString = json.encodeToString(requestBody)
+
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlEditMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+
+        if (response.contains("MESSAGE_NOT_MODIFIED")) println("Ошибка: текст сообщения не был изменён!")
+    }
+
+}
+
+class DynamicMessage(private val botService: TelegramBotService) {
+    private val userMessages: ConcurrentHashMap<Long, MutableList<Pair<Long, String>>> = ConcurrentHashMap()
+
+    fun setMessageId(chatId: Long, messageId: Long, text: String) {
+        val history = userMessages.getOrPut(chatId) { mutableListOf() }
+        history.add(messageId to text)
+    }
+
+    fun updateMessage(json: Json, chatId: Long, newText: String) {
+        val lastMessageId = userMessages[chatId]?.lastOrNull() ?: return
+        botService.editMessage(json, chatId, lastMessageId.first, newText)
+    }
+
+    fun undo(json: Json, chatId: Long) {
+        val history = userMessages[chatId] ?: return
+        if (history.size < 2) return
+        history.removeAt(history.size - 1)
+        val (messageId, previousText) = history.last()
+        botService.editMessage(json, chatId, messageId, previousText)
+    }
+
+    fun getProgressBar(percent: Int, length: Int = 10): String {
+        val filled = (percent * length / 100).coerceIn(0, length)
+        val empty = length - filled
+        return '[' + "█".repeat(filled) + "▒".repeat(empty) + "] $percent%"
+    }
 }

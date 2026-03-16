@@ -46,7 +46,7 @@ data class Document(
 )
 
 @Serializable
-data class SendPhotoResponse(
+data class SendResponse(
     val ok: Boolean,
     val result: Message? = null
 )
@@ -144,6 +144,7 @@ fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
     val telegramBotService = TelegramBotService(botToken)
+    val dynamicMessage = DynamicMessage(telegramBotService)
 
     val json = Json { ignoreUnknownKeys = true }
 
@@ -157,16 +158,20 @@ fun main(args: Array<String>) {
         val response: Response = json.decodeFromString(responseString)
         if (response.result.isNullOrEmpty()) continue
         val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers) }
+        sortedUpdates.forEach { handleUpdates(telegramBotService, it, json, trainers, dynamicMessage) }
         updateId = sortedUpdates.lastOrNull()?.updateId ?: updateId
     }
 }
+
+fun statsText(statistics: Statistics) =
+    "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
 
 fun handleUpdates(
     telegramBotService: TelegramBotService,
     update: Update,
     json: Json,
-    trainers: HashMap<Long, LearnWordsTrainer>
+    trainers: HashMap<Long, LearnWordsTrainer>,
+    dynamicMessage: DynamicMessage
 ) {
     val messageMatchResult = update.message?.text
     val chatIdMatchResult = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
@@ -185,11 +190,13 @@ fun handleUpdates(
         telegramBotService.sendMenu(json, chatIdMatchResult)
     }
 
-    if (data?.lowercase() == STATISTICS_CLICKED) telegramBotService.sendMessage(
-        json,
-        chatIdMatchResult,
-        "Выучено ${statistics.learnedCount} из ${statistics.totalCount} слов | ${statistics.percent}%"
-    )
+    if (data?.lowercase() == STATISTICS_CLICKED) {
+        val responseString = telegramBotService.sendMessage(json, chatIdMatchResult, statsText(statistics))
+        val sendPhotoResponse = json.decodeFromString<SendResponse>(responseString)
+        sendPhotoResponse.result?.messageId?.let { messageId ->
+            dynamicMessage.setMessageId(chatIdMatchResult, messageId, statsText(statistics))
+        }
+    }
 
     if (data?.lowercase() == LEARN_WORDS_CLICKED) {
         trainer.checkNextQuestionAndSend(json, telegramBotService, chatIdMatchResult)
@@ -211,6 +218,8 @@ fun handleUpdates(
                     "Неправильно! ${correctAnswer?.text} – это $correctAnswerText"
                 )
             }
+            val updatedStatistics = trainer.getStatistics()
+            dynamicMessage.updateMessage(json, chatIdMatchResult, statsText(updatedStatistics))
 
             trainer.checkNextQuestionAndSend(json, telegramBotService, chatIdMatchResult)
         }
