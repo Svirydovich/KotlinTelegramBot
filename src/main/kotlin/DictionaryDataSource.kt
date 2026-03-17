@@ -15,20 +15,20 @@ fun updateDictionary(wordsFile: File) {
             INSERT INTO words (text, translate) VALUES (?, ?)
             ON CONFLICT(text) DO UPDATE SET translate = excluded.translate
         """.trimIndent()
-        connection.prepareStatement(insertSql).use { stmt ->
+        connection.prepareStatement(insertSql).use { statement ->
             wordsFile.readLines().forEach { line ->
                 val parts = line.split("|")
                 if (parts.size >= 2) {
                     val text = parts[0].trim()
                     val translate = parts[1].trim()
-                    stmt.setString(1, text)
-                    stmt.setString(2, translate)
-                    stmt.addBatch()
+                    statement.setString(1, text)
+                    statement.setString(2, translate)
+                    statement.addBatch()
                 } else {
                     println("Skipping malformed line: $line")
                 }
             }
-            stmt.executeBatch()
+            statement.executeBatch()
         }
 
         connection.commit()
@@ -137,7 +137,6 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
                 );
                 """.trimIndent()
             )
-            statement.executeUpdate("DROP TABLE IF EXISTS user_answers")
             statement.executeUpdate(
                 """
                     CREATE TABLE IF NOT EXISTS user_answers (
@@ -157,23 +156,23 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
 
     private fun getOrCreateUser(): Long {
         getConnection().use { connection ->
-            val selectStmt = connection.prepareStatement("SELECT id FROM users WHERE chat_id = ?")
-            selectStmt.setLong(1, chatId)
-            val resultSet = selectStmt.executeQuery()
+            val selectStatement = connection.prepareStatement("SELECT id FROM users WHERE chat_id = ?")
+            selectStatement.setLong(1, chatId)
+            val resultSet = selectStatement.executeQuery()
             if (resultSet.next()) {
                 return resultSet.getLong("id")
             }
 
-            val insertStmt = connection.prepareStatement(
+            val insertStatement = connection.prepareStatement(
                 "INSERT INTO users (username, created_at, chat_id) VALUES (?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS
             )
-            insertStmt.setString(1, "user_$chatId")
-            insertStmt.setTimestamp(2, Timestamp(System.currentTimeMillis()))
-            insertStmt.setLong(3, chatId)
-            insertStmt.executeUpdate()
+            insertStatement.setString(1, "user_$chatId")
+            insertStatement.setTimestamp(2, Timestamp(System.currentTimeMillis()))
+            insertStatement.setLong(3, chatId)
+            insertStatement.executeUpdate()
 
-            val generatedKeys = insertStmt.generatedKeys
+            val generatedKeys = insertStatement.generatedKeys
             val newUserId =
                 if (generatedKeys.next()) generatedKeys.getLong(1) else throw SQLException("Не удалось создать пользователя")
             connection.commit()
@@ -184,13 +183,13 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
     override fun getNumOfLearnedWords(): Int {
         val userId = getOrCreateUser()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "SELECT COUNT(*) FROM user_answers WHERE user_id = ? AND correct_answer_count >= ?"
             )
-            stmt.setLong(1, userId)
-            stmt.setInt(2, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            return if (rs.next()) rs.getInt(1) else 0
+            statement.setLong(1, userId)
+            statement.setInt(2, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) resultSet.getInt(1) else 0
         }
     }
 
@@ -206,7 +205,7 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
         val userId = getOrCreateUser()
         val words = mutableListOf<Word>()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 """
             SELECT w.text, w.translate, 
                    COALESCE(ua.correct_answer_count, 0) as correct_count
@@ -216,15 +215,15 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
             WHERE COALESCE(ua.correct_answer_count, 0) >= ?
             """
             )
-            stmt.setLong(1, userId)
-            stmt.setInt(2, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            while (rs.next()) {
+            statement.setLong(1, userId)
+            statement.setInt(2, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
                 words.add(
                     Word(
-                        rs.getString("text"),
-                        rs.getString("translate"),
-                        rs.getInt("correct_count")
+                        resultSet.getString("text"),
+                        resultSet.getString("translate"),
+                        resultSet.getInt("correct_count")
                     )
                 )
             }
@@ -236,7 +235,7 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
         val userId = getOrCreateUser()
         val words = mutableListOf<Word>()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 """
             SELECT w.text, w.translate, 
                    COALESCE(ua.correct_answer_count, 0) as correct_count
@@ -246,15 +245,15 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
             WHERE COALESCE(ua.correct_answer_count, 0) < ?
             """
             )
-            stmt.setLong(1, userId)
-            stmt.setInt(2, NORM_OF_CORRECT_ANSWERS)
-            val rs = stmt.executeQuery()
-            while (rs.next()) {
+            statement.setLong(1, userId)
+            statement.setInt(2, NORM_OF_CORRECT_ANSWERS)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
                 words.add(
                     Word(
-                        rs.getString("text"),
-                        rs.getString("translate"),
-                        rs.getInt("correct_count")
+                        resultSet.getString("text"),
+                        resultSet.getString("translate"),
+                        resultSet.getInt("correct_count")
                     )
                 )
             }
@@ -269,12 +268,12 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
                 "SELECT id FROM words WHERE text = ?"
             )
             selectWordStmt.setString(1, word)
-            val rs = selectWordStmt.executeQuery()
-            if (!rs.next()) {
+            val resultSet = selectWordStmt.executeQuery()
+            if (!resultSet.next()) {
                 println("Слово '$word' не найдено в словаре")
                 return
             }
-            val wordId = rs.getLong("id")
+            val wordId = resultSet.getLong("id")
 
             val insertOrUpdateStmt = connection.prepareStatement(
                 """
@@ -297,12 +296,12 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
     override fun resetUserProgress() {
         val userId = getOrCreateUser()
         getConnection().use { connection ->
-            val stmt = connection.prepareStatement(
+            val statement = connection.prepareStatement(
                 "UPDATE user_answers SET correct_answer_count = 0, updated_at = ? WHERE user_id = ?"
             )
-            stmt.setTimestamp(1, Timestamp(System.currentTimeMillis()))
-            stmt.setLong(2, userId)
-            stmt.executeUpdate()
+            statement.setTimestamp(1, Timestamp(System.currentTimeMillis()))
+            statement.setLong(2, userId)
+            statement.executeUpdate()
             connection.commit()
         }
     }
