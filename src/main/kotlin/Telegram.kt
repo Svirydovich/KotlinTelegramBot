@@ -5,13 +5,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.Date
-import java.text.SimpleDateFormat
 
 const val MENU = "/start"
 const val HELLO = "Hello"
 const val RESET_CLICKED = "reset_clicked"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
+const val MAX_LENGTH = 100
 
 @Serializable
 data class Update(
@@ -243,7 +242,7 @@ fun handleUpdates(
 
             val newWords = mutableListOf<Word>()
             for (line in File(downloadedFile).readLines()) {
-                val validated = validateLine(chatIdMatchResult, line)
+                val validated = validateLine(line)
                 if (validated != null) {
                     val word = Word(
                         text = validated.text,
@@ -259,42 +258,20 @@ fun handleUpdates(
     }
 }
 
-fun logSuspiciousActivity(chatId: Long, line: String) {
-    val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
-    val logLine = "[$timestamp] ChatId: $chatId, Подозрительная строка: $line\n"
-
-    try {
-        val logFile = File("suspicious_activity.log")
-        logFile.appendText(logLine)
-    } catch (e: Exception) {
-        println("Не удалось зарегистрировать подозрительную активность: ${e.message}")
-    }
-}
-
-fun validateLine(chatId: Long, line: String): ValidationResult? {
-    if (line.isBlank()) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+fun validateLine(line: String): ValidationResult? {
+    if (line.isBlank() || line.length > MAX_LENGTH) return null
 
     val parts = line.split("|").map { it.trim() }
-
-    if (parts.size < 2) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (parts.size != 2) return null
 
     val text = parts[0]
     val translate = parts[1]
 
-    if (text.isEmpty() || translate.isEmpty()) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (text.isEmpty() || translate.isEmpty()) return null
 
-    val suspiciousPatterns = listOf("--", "'", ";")
-    if (suspiciousPatterns.any { text.contains(it) || translate.contains(it) }) {
-        logSuspiciousActivity(chatId, line)
+    val validPattern = """^[A-Za-zА-Яа-яЁё0-9\s\-,.]+$""".toRegex()
+
+    if (!validPattern.matches(text) || !validPattern.matches(translate)) {
         return null
     }
 

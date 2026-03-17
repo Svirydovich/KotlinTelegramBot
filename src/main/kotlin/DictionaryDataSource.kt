@@ -115,41 +115,50 @@ class DatabaseUserDictionary(private val dbPath: String = "data.db", private val
 
     private fun createTableIfNotExists() {
         getConnection().use { connection ->
-            val statement = connection.createStatement()
-            statement.executeUpdate("PRAGMA foreign_keys = ON;")
-            statement.executeUpdate(
+            connection.autoCommit = false
+
+            val pragmaForeignKeysOn = connection.prepareStatement("PRAGMA foreign_keys = ON;")
+            pragmaForeignKeysOn.executeUpdate()
+
+            val createUsersTable = connection.prepareStatement(
                 """
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username VARCHAR,
-                    created_at TIMESTAMP,
-                    chat_id INTEGER
-                );
-                """.trimIndent()
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username VARCHAR,
+                created_at TIMESTAMP,
+                chat_id INTEGER
+            );
+        """.trimIndent()
             )
-            statement.executeUpdate(
+            createUsersTable.executeUpdate()
+
+            val createWordsTable = connection.prepareStatement(
                 """
-                CREATE TABLE IF NOT EXISTS words (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    text TEXT NOT NULL UNIQUE,
-                    translate TEXT NOT NULL,
-                    correctAnswersCount INTEGER DEFAULT 0
-                );
-                """.trimIndent()
+            CREATE TABLE IF NOT EXISTS words (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL UNIQUE,
+                translate TEXT NOT NULL,
+                correctAnswersCount INTEGER DEFAULT 0
+            );
+        """.trimIndent()
             )
-            statement.executeUpdate(
+            createWordsTable.executeUpdate()
+
+            val createUserAnswersTable = connection.prepareStatement(
                 """
-                    CREATE TABLE IF NOT EXISTS user_answers (
-                    user_id INTEGER,
-                    word_id INTEGER,
-                    correct_answer_count INTEGER,
-                    updated_at TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id),
-                    FOREIGN KEY (word_id) REFERENCES words(id),
-                    UNIQUE(user_id, word_id)
-                );
-                """.trimIndent()
+            CREATE TABLE IF NOT EXISTS user_answers (
+                user_id INTEGER,
+                word_id INTEGER,
+                correct_answer_count INTEGER,
+                updated_at TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (word_id) REFERENCES words(id),
+                UNIQUE(user_id, word_id)
+            );
+        """.trimIndent()
             )
+            createUserAnswersTable.executeUpdate()
+
             connection.commit()
         }
     }
