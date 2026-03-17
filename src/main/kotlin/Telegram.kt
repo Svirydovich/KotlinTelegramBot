@@ -178,7 +178,7 @@ fun handleUpdates(
     val data = update.callbackQuery?.data
     val document = update.message?.document
 
-    val trainer = trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer("$chatIdMatchResult.txt") }
+    val trainer = trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer(DatabaseUserDictionary()) }
 
     val statistics = trainer.getStatistics()
 
@@ -249,14 +249,7 @@ fun handleUpdates(
                     )
                 )
             }
-
-            newWords.forEach { word ->
-                if (trainer.dictionary.none { it.text == word.text }) {
-                    trainer.dictionary.add(word)
-                }
-            }
-
-            trainer.saveDictionary()
+            newWords.forEach { word -> trainer.addWord(word) }
         }
     }
 }
