@@ -252,7 +252,6 @@ fun handleUpdates(
                     trainer.addWord(word)
                 }
             }
-
             newWords.forEach { word ->
                 trainer.addWord(word)
             }
