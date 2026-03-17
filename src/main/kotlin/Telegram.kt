@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.Date
+import java.text.SimpleDateFormat
 
 const val MENU = "/start"
 const val HELLO = "Hello"
@@ -140,6 +142,8 @@ data class TelegramFile(
     val filePath: String,
 )
 
+data class ValidationResult(val text: String, val translate: String)
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
@@ -178,7 +182,8 @@ fun handleUpdates(
     val data = update.callbackQuery?.data
     val document = update.message?.document
 
-    val trainer = trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer(DatabaseUserDictionary()) }
+    val trainer =
+        trainers.getOrPut(chatIdMatchResult) { LearnWordsTrainer(DatabaseUserDictionary("data.db", chatIdMatchResult)) }
 
     val statistics = trainer.getStatistics()
 
@@ -233,23 +238,66 @@ fun handleUpdates(
     if (document != null) {
         val jsonResponse = telegramBotService.getFile(document.fileId, json)
         val response: GetFileResponse = json.decodeFromString(jsonResponse)
-        response.result?.let { it ->
-            val downloadedFile = telegramBotService.downloadFile(it.filePath, it.fileUniqueId)
+        response.result?.let { fileInfo ->
+            val downloadedFile = telegramBotService.downloadFile(fileInfo.filePath, fileInfo.fileUniqueId)
 
             val newWords = mutableListOf<Word>()
-            for (word in File(downloadedFile).readLines()) {
-                val parts = word.split("|")
-                newWords.add(
-                    Word(
-                        parts[0],
-                        parts[1],
-                        parts[2].toIntOrNull() ?: 0,
-                        parts.getOrNull(3)?.ifEmpty { null },
-                        parts.getOrNull(4)?.ifEmpty { null }
+            for (line in File(downloadedFile).readLines()) {
+                val validated = validateLine(chatIdMatchResult, line)
+                if (validated != null) {
+                    val word = Word(
+                        text = validated.text,
+                        translate = validated.translate
                     )
-                )
+                    trainer.addWord(word)
+                }
             }
-            newWords.forEach { word -> trainer.addWord(word) }
+
+            newWords.forEach { word ->
+                trainer.addWord(word)
+            }
         }
     }
+}
+
+fun logSuspiciousActivity(chatId: Long, line: String) {
+    val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+    val logLine = "[$timestamp] ChatId: $chatId, Подозрительная строка: $line\n"
+
+    try {
+        val logFile = File("suspicious_activity.log")
+        logFile.appendText(logLine)
+    } catch (e: Exception) {
+        println("Не удалось зарегистрировать подозрительную активность: ${e.message}")
+    }
+}
+
+fun validateLine(chatId: Long, line: String): ValidationResult? {
+    if (line.isBlank()) {
+        logSuspiciousActivity(chatId, line)
+        return null
+    }
+
+    val parts = line.split("|").map { it.trim() }
+
+    if (parts.size < 2) {
+        logSuspiciousActivity(chatId, line)
+        return null
+    }
+
+    val text = parts[0]
+    val translate = parts[1]
+
+    if (text.isEmpty() || translate.isEmpty()) {
+        logSuspiciousActivity(chatId, line)
+        return null
+    }
+
+    val suspiciousPatterns = listOf("--", "'", ";")
+    if (suspiciousPatterns.any { text.contains(it) || translate.contains(it) }) {
+        logSuspiciousActivity(chatId, line)
+        return null
+    }
+
+    return ValidationResult(text, translate)
 }
