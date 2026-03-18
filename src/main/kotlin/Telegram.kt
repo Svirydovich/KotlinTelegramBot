@@ -5,13 +5,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.Date
 import java.text.SimpleDateFormat
+import java.util.Date
 
 const val MENU = "/start"
 const val HELLO = "Hello"
 const val RESET_CLICKED = "reset_clicked"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
+const val MAX_LENGTH = 100
 
 @Serializable
 data class Update(
@@ -144,6 +145,8 @@ data class TelegramFile(
 
 data class ValidationResult(val text: String, val translate: String)
 
+val validPattern = """^[A-Za-zА-Яа-яЁё0-9\s\-,.]+$""".toRegex()
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
@@ -252,7 +255,6 @@ fun handleUpdates(
                     trainer.addWord(word)
                 }
             }
-
             newWords.forEach { word ->
                 trainer.addWord(word)
             }
@@ -272,32 +274,23 @@ fun logSuspiciousActivity(chatId: Long, line: String) {
     }
 }
 
+fun invalidLine(chatId: Long, line: String): ValidationResult? {
+    logSuspiciousActivity(chatId, line)
+    return null
+}
+
 fun validateLine(chatId: Long, line: String): ValidationResult? {
-    if (line.isBlank()) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (line.isBlank() || line.length > MAX_LENGTH) return invalidLine(chatId, line)
 
     val parts = line.split("|").map { it.trim() }
-
-    if (parts.size < 2) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (parts.size != 2) return invalidLine(chatId, line)
 
     val text = parts[0]
     val translate = parts[1]
 
-    if (text.isEmpty() || translate.isEmpty()) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (text.isEmpty() || translate.isEmpty()) return invalidLine(chatId, line)
 
-    val suspiciousPatterns = listOf("--", "'", ";")
-    if (suspiciousPatterns.any { text.contains(it) || translate.contains(it) }) {
-        logSuspiciousActivity(chatId, line)
-        return null
-    }
+    if (!validPattern.matches(text) || !validPattern.matches(translate)) return invalidLine(chatId, line)
 
     return ValidationResult(text, translate)
 }
