@@ -7,42 +7,42 @@ import kotlin.test.assertNull
 class ValidateLineTest {
     @Test
     fun `test empty string`() {
-        assertNull(validateLine(" "))
+        assertNull(validateLine(123, " "))
     }
 
     @Test
     fun `test invalid number of pipes`() {
-        assertNull(validateLine("text|translate|extra"))
+        assertNull(validateLine(123, "text|translate|extra"))
     }
 
     @Test
     fun `test blank fields`() {
-        assertNull(validateLine("|"))
+        assertNull(validateLine(123, "|"))
     }
 
     @Test
     fun `test regex mismatch`() {
-        assertNull(validateLine("text|1=1; DROP TABLE users"))
+        assertNull(validateLine(123, "text|1=1; DROP TABLE users"))
     }
 
     @Test
     fun `test successful validation`() {
         val expected = ValidationResult("apple", "яблоко")
-        assertEquals(expected, validateLine("apple|яблоко"))
+        assertEquals(expected, validateLine(123, "apple|яблоко"))
     }
 
     @Test
     fun `test UNION SELECT`() {
-        assertNull(validateLine("admin|UNION SELECT * FROM users"))
+        assertNull(validateLine(123, "admin|UNION SELECT * FROM users"))
     }
 
     @Test
     fun `test DROP TABLE`() {
-        assertNull(validateLine("DROP|TABLE words"))
+        assertNull(validateLine(123, "DROP|TABLE words"))
     }
 
     @Test
     fun `test or condition`() {
-        assertNull(validateLine("admin' OR '1'='1|password"))
+        assertNull(validateLine(123, "admin' OR '1'='1|password"))
     }
 }

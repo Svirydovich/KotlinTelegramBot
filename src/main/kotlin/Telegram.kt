@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 
 const val MENU = "/start"
 const val HELLO = "Hello"
@@ -143,6 +145,8 @@ data class TelegramFile(
 
 data class ValidationResult(val text: String, val translate: String)
 
+val validPattern = """^[A-Za-zА-Яа-яЁё0-9\s\-,.]+$""".toRegex()
+
 fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0L
@@ -242,7 +246,7 @@ fun handleUpdates(
 
             val newWords = mutableListOf<Word>()
             for (line in File(downloadedFile).readLines()) {
-                val validated = validateLine(line)
+                val validated = validateLine(chatIdMatchResult, line)
                 if (validated != null) {
                     val word = Word(
                         text = validated.text,
@@ -258,22 +262,35 @@ fun handleUpdates(
     }
 }
 
-fun validateLine(line: String): ValidationResult? {
-    if (line.isBlank() || line.length > MAX_LENGTH) return null
+fun logSuspiciousActivity(chatId: Long, line: String) {
+    val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+    val logLine = "[$timestamp] ChatId: $chatId, Подозрительная строка: $line\n"
+
+    try {
+        val logFile = File("suspicious_activity.log")
+        logFile.appendText(logLine)
+    } catch (e: Exception) {
+        println("Не удалось зарегистрировать подозрительную активность: ${e.message}")
+    }
+}
+
+fun invalidLine(chatId: Long, line: String): ValidationResult? {
+    logSuspiciousActivity(chatId, line)
+    return null
+}
+
+fun validateLine(chatId: Long, line: String): ValidationResult? {
+    if (line.isBlank() || line.length > MAX_LENGTH) return invalidLine(chatId, line)
 
     val parts = line.split("|").map { it.trim() }
-    if (parts.size != 2) return null
+    if (parts.size != 2) return invalidLine(chatId, line)
 
     val text = parts[0]
     val translate = parts[1]
 
-    if (text.isEmpty() || translate.isEmpty()) return null
+    if (text.isEmpty() || translate.isEmpty()) return invalidLine(chatId, line)
 
-    val validPattern = """^[A-Za-zА-Яа-яЁё0-9\s\-,.]+$""".toRegex()
-
-    if (!validPattern.matches(text) || !validPattern.matches(translate)) {
-        return null
-    }
+    if (!validPattern.matches(text) || !validPattern.matches(translate)) return invalidLine(chatId, line)
 
     return ValidationResult(text, translate)
 }
